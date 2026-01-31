@@ -6,6 +6,8 @@ const cookieParser = require("cookie-parser");
 const prisma = require("./config/db");
 const accidentRoutes = require("./routes/accident.routes");
 const dispatchRoutes = require("./routes/dispatch.routes");
+const ambulanceRoutes = require("./routes/ambulance.routes");
+const hospitalRoutes = require("./routes/hospital.routes");
 
 const app = express();
 
@@ -34,6 +36,8 @@ checkDB();
 
 app.use("/api/accidents", accidentRoutes);
 app.use("/api/dispatch", dispatchRoutes);
+app.use("/api/ambulances", ambulanceRoutes);
+app.use("/api/hospitals", hospitalRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
