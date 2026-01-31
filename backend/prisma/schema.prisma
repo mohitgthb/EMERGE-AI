@@ -28,6 +28,8 @@ model Accident {
   longitude  Float
   severity   String    //low || medium || high
   detectedBy String    //camera || manual
+  confidence  Float?
+  cameraId    String?
   createdAt DateTime @default(now())
 
   dispatch   Dispatch?
