@@ -21,3 +21,50 @@ model User {
   refreshToken String?
   createdAt    DateTime @default(now())
 }
+
+model Accident {
+  id         String   @id @default(uuid())
+  latitude   Float
+  longitude  Float
+  severity   String    //low || medium || high
+  detectedBy String    //camera || manual
+  createdAt DateTime @default(now())
+
+  dispatch   Dispatch?
+}
+
+model Ambulance {
+  id         String  @id @default(uuid())
+  vehicleNo  String  @unique
+  latitude   Float
+  longitude  Float
+  status     String  //available || busy
+  updatedAt  DateTime  @updatedAt
+
+  dispatches Dispatch[]
+}
+
+model Hospital {
+  id         String  @id @default(uuid())
+  name       String
+  latitude   Float
+  longitude  Float
+  beds       Int
+  updatedAt  DateTime  @updatedAt
+
+  dispatches Dispatch[]
+}
+
+model Dispatch {
+  id          String  @id @default(uuid())
+  accidentId  String  @unique
+  ambulanceId String
+  hospitalId  String
+
+  startTime   DateTime @default(now())
+  endtime     DateTime?
+
+  accident    Accident  @relation(fields: [accidentId], references: [id])
+  ambulance   Ambulance @relation(fields: [ambulanceId], references: [id])
+  hospital    Hospital  @relation(fields: [hospitalId], references: [id])
+}
