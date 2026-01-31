@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const prisma = require("./config/db");
+const accidentRoutes = require("./routes/accident.routes");
 
 const app = express();
 
@@ -29,6 +30,8 @@ async function checkDB() {
 }
 
 checkDB();
+
+app.use("/api/accidents", accidentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
