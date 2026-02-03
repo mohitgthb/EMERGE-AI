@@ -2,12 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
-const prisma = require("./config/db");
-const accidentRoutes = require("./routes/accident.routes");
-const dispatchRoutes = require("./routes/dispatch.routes");
-const ambulanceRoutes = require("./routes/ambulance.routes");
-const hospitalRoutes = require("./routes/hospital.routes");
+const socket = require("./socket");
 
 const app = express();
 
@@ -18,6 +13,15 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+
+const prisma = require("./config/db");
+const accidentRoutes = require("./routes/accident.routes");
+const dispatchRoutes = require("./routes/dispatch.routes");
+const ambulanceRoutes = require("./routes/ambulance.routes");
+const hospitalRoutes = require("./routes/hospital.routes");
+
+const server = http.createServer(app);
+socket.init(server);
 
 app.get("/", (req, res) => {
     res.send("Server running")
@@ -40,6 +44,6 @@ app.use("/api/ambulances", ambulanceRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`server running on the port ${PORT}`)
 });

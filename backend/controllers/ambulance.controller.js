@@ -1,4 +1,5 @@
 const prisma = require("../config/db");
+const socket = require("../socket");
 
 exports.addAmbulance = async (req, res) => {
   const { vehicleNo, latitude, longitude } = req.body;
@@ -17,4 +18,21 @@ exports.addAmbulance = async (req, res) => {
   });
 
   res.status(201).json(ambulance);
+};
+
+
+exports.updateAmbulanceStatus = async (req, res) => {
+  const { ambulanceId, status } = req.body;
+
+  await prisma.ambulance.update({
+    where: { id: ambulanceId },
+    data: { status },
+  });
+
+  socket.getIO().emit("AMBULANCE_STATUS_UPDATE", {
+    ambulanceId,
+    status,
+  });
+
+  res.json({ message: "Status updated" });
 };

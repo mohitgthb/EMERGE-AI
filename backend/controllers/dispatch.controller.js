@@ -1,6 +1,7 @@
 const prisma = require("../config/db");
 const { distanceKm } = require("../utils/geo");
 const { selectBestHospital } = require("../services/hospitalSelector");
+const socket = require("../socket");
 
 //distance calculation
 // function distance(a, b) {
@@ -70,9 +71,16 @@ exports.dispatchAmbulance = async (req, res) => {
         data: { beds: { decrement: 1 } }
     });
 
+    const io = socket.getIO();
+    io.emit("AMBULANCE_ASSIGNED", { 
+        accidentId: accident.id, 
+        ambulanceId: nearest.id, 
+        hospitalId: hospital.id 
+    });
+
     res.json({
         dispatch,
         assignedAmbulance: nearest,
         assignedHospital: hospital
-    })
+    });
 };
