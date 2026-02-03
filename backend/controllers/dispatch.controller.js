@@ -1,12 +1,14 @@
 const prisma = require("../config/db");
+const { distanceKm } = require("../utils/geo");
+const { selectBestHospital } = require("../services/hospitalSelector");
 
 //distance calculation
-function distance(a, b) {
-    return Math.sqrt(
-        Math.pow(a.latitude - b.latitude, 2) +
-        Math.pow(a.longitude - b.longitude, 2)
-    );
-}
+// function distance(a, b) {
+//     return Math.sqrt(
+//         Math.pow(a.latitude - b.latitude, 2) +
+//         Math.pow(a.longitude - b.longitude, 2)
+//     );
+// }
 
 exports.dispatchAmbulance = async (req, res) => {
     const { accidentId } = req.body;
@@ -15,29 +17,40 @@ exports.dispatchAmbulance = async (req, res) => {
         where: { id: accidentId }
     });
 
-    if(!accident) return res.status(404).json({ message: "Accident not found" });
+    if (!accident) return res.status(404).json({ message: "Accident not found" });
+
 
     const ambulances = await prisma.ambulance.findMany({
         where: { status: 'AVAILABLE' }
     });
 
-    if(ambulances.length === 0) {
+    if (ambulances.length === 0) {
         return res.status(404).json({ message: "No available ambulances" });
     }
 
     //finding nearest ambulance
     let nearest = ambulances[0];
-    let minDist = distance(accident, nearest);
+    let minDist = distanceKm(
+        accident.latitude,
+        accident.longitude,
+        nearest.latitude,
+        nearest.longitude
+    );
 
-    for(let amb of ambulances) {
-        const d = distance(accident, amb);
-        if(d < minDist) {
+    for (const a of ambulances) {
+        const d = distanceKm(
+            accident.latitude,
+            accident.longitude,
+            a.latitude,
+            a.longitude
+        );
+        if (d < minDist) {
             minDist = d;
-            nearest = amb;
+            nearest = a;
         }
     }
 
-    const hospital = await prisma.hospital.findFirst();
+    const hospital = await selectBestHospital(accident);
 
     const dispatch = await prisma.dispatch.create({
         data: {
@@ -52,5 +65,14 @@ exports.dispatchAmbulance = async (req, res) => {
         data: { status: 'BUSY' }
     });
 
-    res.json(dispatch);
+    await prisma.hospital.update({
+        where: { id: hospital.id },
+        data: { beds: { decrement: 1 } }
+    });
+
+    res.json({
+        dispatch,
+        assignedAmbulance: nearest,
+        assignedHospital: hospital
+    })
 };
