@@ -1,0 +1,19 @@
+<button onclick="sendSOS()" style="font-size:20px;padding:20px;background:red;color:white;">
+  🆘 SOS
+</button>
+
+<script>
+function sendSOS() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    fetch("http://localhost:5000/api/sos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        source: "MOBILE"
+      })
+    });
+  });
+}
+</script>
