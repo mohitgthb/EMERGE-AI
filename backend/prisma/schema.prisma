@@ -40,7 +40,7 @@ model Ambulance {
   vehicleNo  String  @unique
   latitude   Float
   longitude  Float
-  status     String  //available || busy
+  status     String  //available || busy || EN_ROUTE || ARRIVED
   updatedAt  DateTime  @updatedAt
 
   dispatches Dispatch[]
@@ -70,3 +70,13 @@ model Dispatch {
   ambulance   Ambulance @relation(fields: [ambulanceId], references: [id])
   hospital    Hospital  @relation(fields: [hospitalId], references: [id])
 }
+
+model TrafficSignal {
+  id         String @id @default(uuid())
+  junctionId String @unique
+  latitude   Float
+  longitude  Float
+  state      String //RED|| GREEN || NORMAL
+  updatedAt  DateTime @updatedAt
+}
+

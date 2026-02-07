@@ -1,5 +1,5 @@
 const express = require("express");
-const { addAmbulance } = require("../controllers/ambulance.controller");
+const { addAmbulance, updateAmbulanceStatus } = require("../controllers/ambulance.controller");
 
 const router = express.Router();
 
