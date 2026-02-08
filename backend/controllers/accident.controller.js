@@ -1,4 +1,6 @@
 const prisma = require("../config/db");
+const { autoDispatch } = require("../services/dispatchService");
+const socket = require("../socket");
 
 exports.createAccident = async (req, res) => {
     const { latitude, longitude, severity, detectedBy, confidence, cameraId } = req.body;
@@ -18,7 +20,11 @@ exports.createAccident = async (req, res) => {
         }
     });
 
-    res.status(201).json(accident);
+    const dispatch = await autoDispatch(accident);
+
+    socket.emit("new_accident", accident);
+
+    res.status(201).json(accident, dispatch);
 };
 
 
