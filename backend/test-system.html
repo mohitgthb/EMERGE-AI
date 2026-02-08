@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMERGE-AI System Test Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .event-log {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .event-item {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+            background: white;
+        }
+
+        .event-item.success {
+            border-left-color: #28a745;
+        }
+
+        .event-item.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .event-item.socket {
+            border-left-color: #ffc107;
+            background: #fffef5;
+        }
+
+        .timestamp {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.connected {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-badge.disconnected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .response-area {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .response-area:empty::before {
+            content: "Response will appear here...";
+            color: #999;
+            font-style: italic;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            margin-top: 10px;
+        }
+
+        #connectionStatus {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            margin-bottom: 15px;
+        }
+
+        .info-box strong {
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚑 EMERGE-AI System Test Dashboard</h1>
+        
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">🚀 Quick Actions</h2>
+            <div class="btn-group">
+                <button onclick="runFullTest()" style="background: white; color: #667eea;">▶️ Run Complete Test Flow</button>
+                <button onclick="viewAmbulances()" style="background: rgba(255,255,255,0.2); color: white;">🚑 View All Ambulances</button>
+                <button onclick="viewSignals()" style="background: rgba(255,255,255,0.2); color: white;">🚦 View All Signals</button>
+                <button onclick="testGreenCorridor()" style="background: #28a745; color: white;">✅ Test Green Corridor</button>
+            </div>
+            <div class="response-area" id="quickTestLog" style="background: rgba(255,255,255,0.1); color: white; margin-top: 10px;"></div>
+        </div>
+        
+        <div id="connectionStatus">
+            <span class="status-badge disconnected" id="socketStatus">Socket.IO: Disconnected</span>
+            <span class="status-badge" id="greenCorridorStatus" style="background: #6c757d; margin-left: 10px;">🚦 Green Corridor: Inactive</span>
+        </div>
+
+        <div class="grid">
+            <!-- Step 1: Create Accident -->
+            <div class="card">
+                <h2>1️⃣ Create Accident</h2>
+                <div class="info-box">
+                    <strong>⚠️ Prerequisites:</strong> Add at least 1 ambulance + 1 hospital first!<br>
+                    <strong>Triggers:</strong> Auto-dispatch → Ambulance assignment → Route generation
+                </div>
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="number" step="0.0001" id="accidentLat" value="28.6139" placeholder="28.6139">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="number" step="0.0001" id="accidentLng" value="77.2090" placeholder="77.2090">
+                </div>
+                <div class="form-group">
+                    <label>Severity</label>
+                    <select id="accidentSeverity">
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Detected By</label>
+                    <select id="detectedBy">
+                        <option value="CAMERA">Camera</option>
+                        <option value="MANUAL">Manual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Confidence (0-1)</label>
+                    <input type="number" step="0.01" id="confidence" value="0.92" placeholder="0.92">
+                </div>
+                <button onclick="createAccident()">🚨 Create Accident</button>
+                <div class="response-area" id="accidentResponse"></div>
+            </div>
+
+            <!-- Step 2: Add Ambulance -->
+            <div class="card">
+                <h2>🚑 Add Ambulance</h2>
+                <div class="form-group">
+                    <label>Vehicle Number</label>
+                    <input type="text" id="vehicleNo" value="AMB-001" placeholder="AMB-001">
+                </div>
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="number" step="0.0001" id="ambulanceLat" value="28.6100" placeholder="28.6100">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="number" step="0.0001" id="ambulanceLng" value="77.2050" placeholder="77.2050">
+                </div>
+                <button onclick="addAmbulance()">➕ Add Ambulance</button>
+                <div class="response-area" id="ambulanceResponse"></div>
+            </div>
+
+            <!-- Step 3: Add Hospital -->
+            <div class="card">
+                <h2>🏥 Add Hospital</h2>
+                <div class="form-group">
+                    <label>Hospital Name</label>
+                    <input type="text" id="hospitalName" value="AIIMS Delhi" placeholder="AIIMS Delhi">
+                </div>
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="number" step="0.0001" id="hospitalLat" value="28.6200" placeholder="28.6200">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="number" step="0.0001" id="hospitalLng" value="77.2100" placeholder="77.2100">
+                </div>
+                <div class="form-group">
+                    <label>Available Beds</label>
+                    <input type="number" id="beds" value="50" placeholder="50">
+                </div>
+                <button onclick="addHospital()">➕ Add Hospital</button>
+                <div class="response-area" id="hospitalResponse"></div>
+            </div>
+
+            <!-- Step 4: Update Ambulance Status -->
+            <div class="card">
+                <h2>5️⃣ Update Ambulance Status</h2>
+                <div class="info-box">
+                    <strong>EN_ROUTE:</strong> Activates green corridor<br>
+                    <strong>ARRIVED:</strong> Resets signals
+                </div>
+                <div class="form-group">
+                    <label>Ambulance ID (from response above)</label>
+                    <input type="text" id="statusAmbulanceId" placeholder="Paste ambulance ID">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="ambulanceStatus">
+                        <option value="EN_ROUTE">EN_ROUTE</option>
+                        <option value="ARRIVED">ARRIVED</option>
+                        <option value="AVAILABLE">AVAILABLE</option>
+                        <option value="BUSY">BUSY</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Latitude (for GPS tracking)</label>
+                    <input type="number" step="0.0001" id="statusLat" value="28.6120" placeholder="28.6120">
+                </div>
+                <div class="form-group">
+                    <label>Longitude (for GPS tracking)</label>
+                    <input type="number" step="0.0001" id="statusLng" value="77.2070" placeholder="77.2070">
+                </div>
+                <button onclick="updateStatus()">📍 Update Status</button>
+                <div class="response-area" id="statusResponse"></div>
+            </div>
+
+            <!-- Step 5: Add Traffic Signal -->
+            <div class="card">
+                <h2>🚦 Add Traffic Signal</h2>
+                <div class="form-group">
+                    <label>Junction ID</label>
+                    <input type="text" id="junctionId" value="J-001" placeholder="J-001">
+                </div>
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="number" step="0.0001" id="signalLat" value="28.6110" placeholder="28.6110">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="number" step="0.0001" id="signalLng" value="77.2060" placeholder="77.2060">
+                </div>
+                <button onclick="addSignal()">➕ Add Signal</button>
+                <div class="response-area" id="signalResponse"></div>
+            </div>
+        </div>
+
+        <!-- Socket.IO Event Log -->
+        <div class="card">
+            <h2>📡 Real-time Socket.IO Events</h2>
+            <button class="clear-btn" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <div class="event-log" id="eventLog"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let socket;
+        
+        // Initialize Socket.IO
+        function initSocket() {
+            socket = io('http://localhost:5000');
+            
+            socket.on('connect', () => {
+                document.getElementById('socketStatus').textContent = 'Socket.IO: Connected';
+                document.getElementById('socketStatus').className = 'status-badge connected';
+                logEvent('Socket.IO connected', 'socket');
+            });
+            
+            socket.on('disconnect', () => {
+                document.getElementById('socketStatus').textContent = 'Socket.IO: Disconnected';
+                document.getElementById('socketStatus').className = 'status-badge disconnected';
+                logEvent('Socket.IO disconnected', 'error');
+            });
+            
+            // Listen to all events
+            socket.on('new_accident', (data) => logSocketEvent('new_accident', data));
+            socket.on('EMERGENCY_STARTED', (data) => logSocketEvent('EMERGENCY_STARTED', data));
+            socket.on('AMBULANCE_ASSIGNED', (data) => logSocketEvent('AMBULANCE_ASSIGNED', data));
+            socket.on('AMBULANCE_STATUS_UPDATE', (data) => logSocketEvent('AMBULANCE_STATUS_UPDATE', data));
+            socket.on('AMBULANCE_LOCATION_UPDATE', (data) => logSocketEvent('AMBULANCE_LOCATION_UPDATE', data));
+            socket.on('SIGNAL_GREEN', (data) => logSocketEvent('SIGNAL_GREEN', data));
+            socket.on('SIGNAL_RESET', (data) => logSocketEvent('SIGNAL_RESET', data));
+            socket.on('GREEN_CORRIDOR_STATUS', (data) => {
+                logSocketEvent('GREEN_CORRIDOR_STATUS', data);
+                updateGreenCorridorBadge(data);
+            });
+        }
+        
+        // API Functions
+        async function createAccident() {
+            const data = {
+                latitude: parseFloat(document.getElementById('accidentLat').value),
+                longitude: parseFloat(document.getElementById('accidentLng').value),
+                severity: document.getElementById('accidentSeverity').value,
+                detectedBy: document.getElementById('detectedBy').value,
+                confidence: parseFloat(document.getElementById('confidence').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/accidents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                // Format response with dispatch highlight
+                let displayText = JSON.stringify(result, null, 2);
+                if (result.dispatch) {
+                    displayText = `✅ AUTO-DISPATCH SUCCESSFUL!\n\n${displayText}`;
+                    logEvent(`✅ Accident created & dispatched: ${result.accident?.id}`, 'success');
+                    logEvent(`   → Ambulance: ${result.dispatch.ambulanceId}`, 'success');
+                    logEvent(`   → Hospital: ${result.dispatch.hospitalId}`, 'success');
+                    logEvent(`   → Route: ${result.dispatch.routeDistanceKm?.toFixed(2)} km`, 'success');
+                } else {
+                    displayText = `⚠️ NO AUTO-DISPATCH (no ambulances/hospitals available)\n\n${displayText}`;
+                    logEvent(`⚠️ Accident created but NOT dispatched: ${result.accident?.id}`, 'error');
+                }
+                
+                document.getElementById('accidentResponse').textContent = displayText;
+            } catch (error) {
+                document.getElementById('accidentResponse').textContent = error.message;
+                logEvent(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function addAmbulance() {
+            const data = {
+                vehicleNo: document.getElementById('vehicleNo').value,
+                latitude: parseFloat(document.getElementById('ambulanceLat').value),
+                longitude: parseFloat(document.getElementById('ambulanceLng').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/ambulances`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('ambulanceResponse').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('statusAmbulanceId').value = result.id;
+                logEvent(`Ambulance added: ${result.vehicleNo}`, 'success');
+            } catch (error) {
+                document.getElementById('ambulanceResponse').textContent = error.message;
+                logEvent(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function addHospital() {
+            const data = {
+                name: document.getElementById('hospitalName').value,
+                latitude: parseFloat(document.getElementById('hospitalLat').value),
+                longitude: parseFloat(document.getElementById('hospitalLng').value),
+                beds: parseInt(document.getElementById('beds').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/hospitals`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('hospitalResponse').textContent = JSON.stringify(result, null, 2);
+                logEvent(`Hospital added: ${result.name}`, 'success');
+            } catch (error) {
+                document.getElementById('hospitalResponse').textContent = error.message;
+                logEvent(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function updateStatus() {
+            const data = {
+                ambulanceId: document.getElementById('statusAmbulanceId').value,
+                status: document.getElementById('ambulanceStatus').value,
+                latitude: parseFloat(document.getElementById('statusLat').value),
+                longitude: parseFloat(document.getElementById('statusLng').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/ambulance-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('statusResponse').textContent = JSON.stringify(result, null, 2);
+                logEvent(`Status updated: ${data.status}`, 'success');
+            } catch (error) {
+                document.getElementById('statusResponse').textContent = error.message;
+                logEvent(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function addSignal() {
+            const data = {
+                junctionId: document.getElementById('junctionId').value,
+                latitude: parseFloat(document.getElementById('signalLat').value),
+                longitude: parseFloat(document.getElementById('signalLng').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/signals`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('signalResponse').textContent = JSON.stringify(result, null, 2);
+                logEvent(`Signal added: ${result.junctionId}`, 'success');
+            } catch (error) {
+                document.getElementById('signalResponse').textContent = error.message;
+                logEvent(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Logging
+        function logEvent(message, type = 'info') {
+            const log = document.getElementById('eventLog');
+            const item = document.createElement('div');
+            item.className = `event-item ${type}`;
+            item.innerHTML = `
+                <span class="timestamp">[${new Date().toLocaleTimeString()}]</span>
+                ${message}
+            `;
+            log.insertBefore(item, log.firstChild);
+        }
+        
+        function logSocketEvent(event, data) {
+            const log = document.getElementById('eventLog');
+            const item = document.createElement('div');
+            item.className = 'event-item socket';
+            item.innerHTML = `
+                <span class="timestamp">[${new Date().toLocaleTimeString()}]</span>
+                <strong>🔔 ${event}:</strong><br>
+                <pre style="margin: 5px 0 0 0; font-size: 11px;">${JSON.stringify(data, null, 2)}</pre>
+            `;
+            log.insertBefore(item, log.firstChild);
+        }
+        
+        function clearLogs() {
+            document.getElementById('eventLog').innerHTML = '';
+        }
+        
+        // Quick test sequence
+        async function runFullTest() {
+            const log = document.getElementById('quickTestLog');
+            log.textContent = '⏳ Starting full test sequence...\n';
+            
+            try {
+                // 1. Add Hospital
+                log.textContent += '\n1️⃣ Adding hospital...';
+                await addHospital();
+                await sleep(1000);
+                
+                // 2. Add Ambulance
+                log.textContent += '\n2️⃣ Adding ambulance...';
+                await addAmbulance();
+                await sleep(1000);
+                
+                // 3. Add Traffic Signal
+                log.textContent += '\n3️⃣ Adding traffic signal...';
+                await addSignal();
+                await sleep(1000);
+                
+                // 4. Create Accident (triggers auto-dispatch)
+                log.textContent += '\n4️⃣ Creating accident (triggers auto-dispatch)...';
+                await createAccident();
+                await sleep(2000);
+                
+                log.textContent += '\n\n✅ Complete! Check the event log below for Socket.IO events.';
+                log.textContent += '\n\n📍 Next: Update ambulance status to EN_ROUTE to activate green corridor!';
+            } catch (error) {
+                log.textContent += `\n\n❌ Error: ${error.message}`;
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Update green corridor status badge
+        function updateGreenCorridorBadge(data) {
+            const badge = document.getElementById('greenCorridorStatus');
+            if (data.status === 'ACTIVE') {
+                badge.textContent = `🟢 Green Corridor: ACTIVE (${data.signalsInRange} signals)`;
+                badge.style.background = '#28a745';
+            } else if (data.status === 'NO_SIGNALS') {
+                badge.textContent = '⚠️ Green Corridor: No Signals in DB';
+                badge.style.background = '#ffc107';
+            } else if (data.status === 'NO_SIGNALS_IN_RANGE') {
+                badge.textContent = '🟡 Green Corridor: No Signals in Range';
+                badge.style.background = '#fd7e14';
+            }
+        }
+        
+        // View all ambulances
+        async function viewAmbulances() {
+            const log = document.getElementById('quickTestLog');
+            try {
+                const response = await fetch(`${API_BASE}/ambulances`);
+                const ambulances = await response.json();
+                log.textContent = `📋 Found ${ambulances.length} ambulance(s):\n\n${JSON.stringify(ambulances, null, 2)}`;
+                logEvent(`Listed ${ambulances.length} ambulances`, 'success');
+            } catch (error) {
+                log.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // View all signals
+        async function viewSignals() {
+            const log = document.getElementById('quickTestLog');
+            try {
+                const response = await fetch(`${API_BASE}/signals`);
+                const signals = await response.json();
+                log.textContent = `📋 Found ${signals.length} signal(s):\n\n${JSON.stringify(signals, null, 2)}`;
+                logEvent(`Listed ${signals.length} signals`, 'success');
+                if (signals.length === 0) {
+                    log.textContent += '\n\n⚠️ No signals found! Add a signal first using "Add Traffic Signal" section.';
+                }
+            } catch (error) {
+                log.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Test green corridor specifically
+        async function testGreenCorridor() {
+            const log = document.getElementById('quickTestLog');
+            log.textContent = '🧪 Testing Green Corridor...\n';
+            
+            try {
+                // 1. Check signals exist
+                const signalsRes = await fetch(`${API_BASE}/signals`);
+                const signals = await signalsRes.json();
+                log.textContent += `\n✓ Signals in database: ${signals.length}`;
+                
+                if (signals.length === 0) {
+                    log.textContent += '\n\n❌ No signals found! Run "Complete Test Flow" first or add a signal manually.';
+                    return;
+                }
+                
+                // 2. Check ambulances exist
+                const ambRes = await fetch(`${API_BASE}/ambulances`);
+                const ambulances = await ambRes.json();
+                log.textContent += `\n✓ Ambulances in database: ${ambulances.length}`;
+                
+                if (ambulances.length === 0) {
+                    log.textContent += '\n\n❌ No ambulances found! Run "Complete Test Flow" first or add an ambulance manually.';
+                    return;
+                }
+                
+                // 3. Update first ambulance to EN_ROUTE with GPS near first signal
+                const ambulance = ambulances[0];
+                const signal = signals[0];
+                
+                log.textContent += `\n\n📍 Setting ambulance ${ambulance.vehicleNo} to EN_ROUTE near signal ${signal.junctionId}...`;
+                
+                const statusData = {
+                    ambulanceId: ambulance.id,
+                    status: 'EN_ROUTE',
+                    latitude: signal.latitude + 0.001, // About 111m away
+                    longitude: signal.longitude + 0.001
+                };
+                
+                const statusRes = await fetch(`${API_BASE}/ambulance-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(statusData)
+                });
+                
+                const result = await statusRes.json();
+                log.textContent += `\n✓ Status updated!`;
+                log.textContent += `\n\n⏳ Watch the event log below for GREEN_CORRIDOR_STATUS and SIGNAL_GREEN events...`;
+                
+            } catch (error) {
+                log.textContent += `\n\n❌ Error: ${error.message}`;
+            }
+        }
+        
+        // Initialize on load
+        window.onload = initSocket;
+    </script>
+</body>
+</html>

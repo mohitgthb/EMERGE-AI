@@ -2,6 +2,11 @@ const prisma = require("../config/db");
 const socket = require("../socket");
 const { activeGreenCorridor, resetSignals } = require("../services/greenCorridor");
 
+exports.getAllAmbulances = async (req, res) => {
+  const ambulances = await prisma.ambulance.findMany();
+  res.json(ambulances);
+};
+
 exports.addAmbulance = async (req, res) => {
   const { vehicleNo, latitude, longitude } = req.body;
 

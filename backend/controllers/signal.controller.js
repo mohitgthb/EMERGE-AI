@@ -1,5 +1,10 @@
 const prisma = require("../config/db");
 
+exports.getAllSignals = async (req, res) => {
+    const signals = await prisma.trafficSignal.findMany();
+    res.json(signals);
+};
+
 exports.addSignal = async (req, res) => {
     const { junctionId, latitude, longitude } = req.body;
 

@@ -8,12 +8,16 @@ const http = require("http");
 const app = express();
 
 app.use(cors({
-    origin: ["http://localhost:5173", "null"],
-    credentials: true
+    origin: ["http://localhost:5173", "http://localhost:5000", "null"],
+    credentials: true,
+    optionsSuccessStatus: 200
 }));
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve static files (HTML test dashboard)
+app.use(express.static(__dirname));
 
 const prisma = require("./config/db");
 const accidentRoutes = require("./routes/accident.routes");
@@ -28,7 +32,29 @@ const server = http.createServer(app);
 socket.init(server);
 
 app.get("/", (req, res) => {
-    res.send("Server running")
+    res.send(`
+        <html>
+            <head>
+                <title>EMERGE-AI Backend</title>
+                <style>
+                    body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
+                    h1 { color: #667eea; margin-bottom: 20px; }
+                    a { display: inline-block; margin: 10px; padding: 15px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
+                    a:hover { background: #764ba2; }
+                    .status { color: #28a745; font-weight: 600; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>🚑 EMERGE-AI Backend</h1>
+                    <p class="status">✅ Server Running</p>
+                    <a href="/test-system.html">🧪 Open Test Dashboard</a>
+                    <a href="/api/accidents" style="background: #6c757d;">📡 API Docs</a>
+                </div>
+            </body>
+        </html>
+    `);
 });
 
 async function checkDB() {
