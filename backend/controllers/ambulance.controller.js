@@ -25,28 +25,48 @@ exports.addAmbulance = async (req, res) => {
 exports.updateAmbulanceStatus = async (req, res) => {
   const { ambulanceId, status, latitude, longitude } = req.body;
 
-  await prisma.ambulance.update({
-    where: { id: ambulanceId },
-    data: { status, latitude, longitude },
-  });
-
-  socket.getIO().emit("AMBULANCE_STATUS_UPDATE", {
-    ambulanceId,
-    status,
-  });
-
-  //from frontend driver change status to en route or arrived, we will activate or reset green corridor accordingly
-  if (status === "EN_ROUTE") {
-    const ambulance = await prisma.ambulance.findUnique({ where: { id: ambulanceId } });
-    await activeGreenCorridor(ambulance);
-
-    console.log(`Green corridor activated for ambulance ${ambulance.vehicleNo}`);
+  if (!ambulanceId) {
+    return res.status(400).json({ message: "Missing required field: ambulanceId" });
   }
 
-  if (status === "ARRIVED") {
+  // Build update payload safely (avoid writing undefined)
+  const data = {};
+  if (status != null) data.status = String(status).toUpperCase();
+  if (latitude != null) data.latitude = latitude;
+  if (longitude != null) data.longitude = longitude;
+
+  const updated = await prisma.ambulance.update({
+    where: { id: ambulanceId },
+    data,
+  });
+
+  // Status event (existing)
+  socket.getIO().emit("AMBULANCE_STATUS_UPDATE", {
+    ambulanceId: updated.id,
+    status: updated.status,
+  });
+
+  // NEW: Real-time GPS tracking event
+  if (updated.latitude != null && updated.longitude != null) {
+    socket.getIO().emit("AMBULANCE_LOCATION_UPDATE", {
+      ambulanceId: updated.id,
+      latitude: updated.latitude,
+      longitude: updated.longitude,
+      status: updated.status,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Green corridor: activate whenever EN_ROUTE AND we have location (supports continuous GPS)
+  if (updated.status === "EN_ROUTE" && updated.latitude != null && updated.longitude != null) {
+    await activeGreenCorridor(updated);
+    console.log(`Green corridor activated for ambulance ${updated.vehicleNo}`);
+  }
+
+  if (updated.status === "ARRIVED") {
     await resetSignals();
     console.log(`Green corridor reset for ambulance ID ${ambulanceId}`);
   }
 
-  res.json({ message: "Status updated" });
+  res.json({ message: "Ambulance updated", ambulance: updated });
 };

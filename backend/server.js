@@ -19,6 +19,7 @@ const prisma = require("./config/db");
 const accidentRoutes = require("./routes/accident.routes");
 const dispatchRoutes = require("./routes/dispatch.routes");
 const ambulanceRoutes = require("./routes/ambulance.routes");
+const ambulanceStatusRoutes = require("./routes/ambulanceStatus.routes");
 const hospitalRoutes = require("./routes/hospital.routes");
 const signalRoutes = require("./routes/signal.routes");
 const sosRoutes = require("./routes/sos.routes");
@@ -44,6 +45,8 @@ checkDB();
 app.use("/api/accidents", accidentRoutes);
 app.use("/api/dispatch", dispatchRoutes);
 app.use("/api/ambulances", ambulanceRoutes);
+// Alias route for exact flow match: POST /api/ambulance-status
+app.use("/api/ambulance-status", ambulanceStatusRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/signals", signalRoutes);
 app.use("/api/sos", sosRoutes);

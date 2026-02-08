@@ -66,6 +66,12 @@ model Dispatch {
   startTime   DateTime @default(now())
   endtime     DateTime?
 
+  // Route information for navigation
+  routeProvider    String?
+  routeDistanceKm  Float?
+  routeDurationSec Int?
+  routeGeometry    Json?
+
   accident    Accident  @relation(fields: [accidentId], references: [id])
   ambulance   Ambulance @relation(fields: [ambulanceId], references: [id])
   hospital    Hospital  @relation(fields: [hospitalId], references: [id])

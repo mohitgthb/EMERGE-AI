@@ -16,22 +16,30 @@ exports.activeGreenCorridor = async (ambulance) => {
         );
 
         if(d <= ACTIVATION_RADIUS_KM) {
-            await prisma.trafficSignal.update({
-                where: { id: signal.id },
+            // Only update if not already GREEN (avoid redundant DB writes)
+            const updated = await prisma.trafficSignal.updateMany({
+                where: { id: signal.id, state: { not: "GREEN" } },
                 data: { state: "GREEN" },
             });
 
-            socket.getIO().emit("SIGNAl_GREEN", {
-                junctionId: signal.junctionId,
-            });
+            if (updated.count > 0) {
+                socket.getIO().emit("SIGNAL_GREEN", {
+                    junctionId: signal.junctionId,
+                    state: "GREEN",
+                });
+            }
         }
     }
 };
 
 exports.resetSignals = async () => {
-    await prisma.trafficSignal.updateMany({
+    // Only reset signals that are not already NORMAL
+    const updated = await prisma.trafficSignal.updateMany({
+        where: { state: { not: "NORMAL" } },
         data: { state: "NORMAL"},
     });
 
-    socket.getIO().emit("SIGNAL_RESET");
+    if (updated.count > 0) {
+        socket.getIO().emit("SIGNAL_RESET", { state: "NORMAL" });
+    }
 };

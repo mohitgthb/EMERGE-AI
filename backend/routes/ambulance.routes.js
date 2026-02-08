@@ -6,4 +6,7 @@ const router = express.Router();
 router.post("/", addAmbulance);
 router.put("/status", updateAmbulanceStatus);
 
+// Alias route to match the flow documentation: POST /api/ambulance-status
+router.post("/status", updateAmbulanceStatus);
+
 module.exports = router;
