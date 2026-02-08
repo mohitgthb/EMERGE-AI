@@ -1,6 +1,6 @@
 const prisma = require("../config/db");
 const socket = require("../socket");
-const { activeGreenCorridor } = require("../services/greenCorridor");
+const { activeGreenCorridor, resetSignals } = require("../services/greenCorridor");
 
 exports.addAmbulance = async (req, res) => {
   const { vehicleNo, latitude, longitude } = req.body;
@@ -35,11 +35,17 @@ exports.updateAmbulanceStatus = async (req, res) => {
     status,
   });
 
+  //from frontend driver change status to en route or arrived, we will activate or reset green corridor accordingly
   if (status === "EN_ROUTE") {
     const ambulance = await prisma.ambulance.findUnique({ where: { id: ambulanceId } });
     await activeGreenCorridor(ambulance);
 
     console.log(`Green corridor activated for ambulance ${ambulance.vehicleNo}`);
+  }
+
+  if (status === "ARRIVED") {
+    await resetSignals();
+    console.log(`Green corridor reset for ambulance ID ${ambulanceId}`);
   }
 
   res.json({ message: "Status updated" });
