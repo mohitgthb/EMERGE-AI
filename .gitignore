@@ -54,3 +54,10 @@ coverage/
 .cache
 tmp/
 temp/
+
+model/data/dataset/
+model/data/raw/
+model/data/auto_label/
+
+__pycache__/
+*.pyc
