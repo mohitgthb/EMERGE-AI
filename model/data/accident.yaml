@@ -1,0 +1,12 @@
+path: data/dataset
+
+train: images/train
+val: images/val
+
+names:
+  0: car
+  1: motorcycle
+  2: person
+  3: truck
+  4: bus
+  5: fallen_person
