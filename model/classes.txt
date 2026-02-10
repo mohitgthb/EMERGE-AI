@@ -1,0 +1,6 @@
+car
+motorcycle
+person
+truck
+bus
+fallen_person

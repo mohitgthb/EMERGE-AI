@@ -1,0 +1,11 @@
+# CNN Verifier Dependencies
+# Add these to your existing requirements.txt
+
+# Core ML dependencies (if not already present)
+tensorflow>=2.12.0  # For TFLite interpreter
+numpy>=1.21.0
+opencv-python>=4.7.0
+
+# Already required by YOLO (should be present):
+# ultralytics>=8.0.0
+# torch>=2.0.0
