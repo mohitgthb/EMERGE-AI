@@ -61,3 +61,11 @@ model/data/auto_label/
 
 __pycache__/
 *.pyc
+
+# Models
+*.pt
+*.tflite
+
+# Videos
+*.mp4
+*.avi
