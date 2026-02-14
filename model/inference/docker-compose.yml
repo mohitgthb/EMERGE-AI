@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Accident Detection API Service
+  accident-detection-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emerge-ai-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_PATH=/app/yolov8s.pt
+      - CNN_MODEL_PATH=/app/models/accident_detection_model.pth
+    volumes:
+      # Mount for dynamic model updates (optional)
+      - ./models:/app/models:ro
+      - ./yolov8s.pt:/app/yolov8s.pt:ro
+    restart: unless-stopped
+    # GPU support (uncomment if using NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - emerge-network
+
+networks:
+  emerge-network:
+    driver: bridge
+
+# Optional: Connect to existing backend network
+# networks:
+#   emerge-network:
+#     external: true
+#     name: backend_network

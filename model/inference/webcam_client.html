@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMERGE AI - Accident Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .button-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .button-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .button-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .button-secondary {
+            background: #718096;
+            color: white;
+        }
+        
+        .video-container {
+            position: relative;
+            background: black;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        video, canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status-info {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+        
+        .status-success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+        
+        .status-warning {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+        
+        .status-danger {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .accident-alert {
+            background: #fed7d7;
+            border-left-color: #f56565;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .file-input {
+            padding: 10px;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .file-input:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .vehicle-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .vehicle-item {
+            background: #edf2f7;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 EMERGE AI</h1>
+            <p>Real-Time Accident Detection System</p>
+        </div>
+        
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('webcam')">📹 Live Webcam</button>
+                <button class="tab" onclick="switchTab('upload')">📁 File Upload</button>
+                <button class="tab" onclick="switchTab('history')">📊 History</button>
+            </div>
+            
+            <!-- Webcam Tab -->
+            <div id="webcam-tab" class="tab-content active">
+                <div class="section">
+                    <h2>Live Webcam Detection</h2>
+                    <p>Start your webcam to detect accidents in real-time</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <label><strong>Camera Backend:</strong></label>
+                        <select id="backend-select" style="padding: 8px; border-radius: 5px; margin-left: 10px;">
+                            <option value="auto">Auto (Recommended)</option>
+                            <option value="dshow">DirectShow (Windows)</option>
+                            <option value="msmf">Media Foundation</option>
+                            <option value="any">Default</option>
+                        </select>
+                        <span style="margin-left: 10px; color: #666; font-size: 14px;">
+                            ℹ️ If webcam fails, try DirectShow
+                        </span>
+                    </div>
+                    
+                    <div class="video-container">
+                        <video id="webcam-video" autoplay playsinline></video>
+                        <canvas id="webcam-canvas" style="display:none;"></canvas>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="button button-success" onclick="startWebcam()">Start Webcam</button>
+                        <button class="button button-danger" onclick="stopWebcam()">Stop Webcam</button>
+                        <button class="button button-primary" onclick="captureAndDetect()">Capture & Detect</button>
+                        <button class="button button-secondary" onclick="startContinuous()">Start Continuous</button>
+                        <button class="button button-secondary" onclick="stopContinuous()">Stop Continuous</button>
+                    </div>
+                    
+                    <div id="webcam-status"></div>
+                    <div id="webcam-result"></div>
+                </div>
+            </div>
+            
+            <!-- File Upload Tab -->
+            <div id="upload-tab" class="tab-content">
+                <div class="section">
+                    <h2>Video File Upload</h2>
+                    <p>Upload a video file to analyze for accidents</p>
+                    
+                    <label for="video-upload" class="file-input">
+                        <div style="padding: 40px;">
+                            <p style="font-size: 48px;">📁</p>
+                            <p style="margin-top: 10px;">Click to select video file</p>
+                            <p style="font-size: 12px; color: #999; margin-top: 5px;">MP4, AVI, MOV supported</p>
+                        </div>
+                    </label>
+                    <input type="file" id="video-upload" accept="video/*" onchange="handleFileUpload(this)">
+                    
+                    <div id="upload-status"></div>
+                    <div id="upload-result"></div>
+                </div>
+            </div>
+            
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <div class="section">
+                    <h2>Detection History</h2>
+                    <button class="button button-primary" onclick="loadHistory()">Refresh History</button>
+                    <button class="button button-danger" onclick="resetState()">Reset All</button>
+                    
+                    <div id="history-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let stream = null;
+        
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        }
+        
+        // Webcam functions
+        async function startWebcam() {
+            try {
+                // Start browser webcam
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('webcam-video').srcObject = stream;
+                
+                // Get selected backend
+                const backend = document.getElementById('backend-select').value;
+                
+                // Initialize API webcam
+                const response = await fetch(`${API_URL}/webcam/start?backend=${backend}`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus('webcam-status', 'success', 
+                        `✅ Webcam started - ${data.resolution.width}x${data.resolution.height} (${data.backend})`);
+                } else {
+                    showStatus('webcam-status', 'danger', 
+                        `❌ Failed to start API webcam: ${data.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showStatus('webcam-status', 'danger', '❌ Failed to start webcam: ' + error.message);
+            }
+        }
+        
+        async function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('webcam-video').srcObject = null;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/webcam/stop`, { method: 'POST' });
+                const data = await response.json();
+                showStatus('webcam-status', 'info', '🛑 Webcam stopped');
+                document.getElementById('webcam-result').innerHTML = '';
+            } catch (error) {
+                showStatus('webcam-status', 'danger', '❌ Error: ' + error.message);
+            }
+        }
+        
+        async function captureAndDetect() {
+            try {
+                showStatus('webcam-status', 'info', '🔍 Analyzing... <span class="loading"></span>');
+                
+                const response = await fetch(`${API_URL}/webcam/detect`, { method: 'POST' });
+                const result = await response.json();
+                
+                displayResult('webcam-result', result);
+                
+                if (result.accident_detected) {
+                    showStatus('webcam-status', 'danger', 
+                        `🚨 ACCIDENT DETECTED! Confidence: ${(result.confidence * 100).toFixed(1)}%`);
+                } else {
+                    showStatus('webcam-status', 'success', 
+                        `✅ No accident detected - ${result.vehicles.length} vehicles tracked`);
+                }
+            } catch (error) {
+                showStatus('webcam-status', 'danger', '❌ Detection failed: ' + error.message);
+            }
+        }
+        
+        async function startContinuous() {
+            try {
+                const response = await fetch(`${API_URL}/webcam/continuous/start?fps=5`, { method: 'POST' });
+                const data = await response.json();
+                showStatus('webcam-status', 'success', '▶️ Continuous detection started at 5 FPS');
+            } catch (error) {
+                showStatus('webcam-status', 'danger', '❌ Error: ' + error.message);
+            }
+        }
+        
+        async function stopContinuous() {
+            try {
+                const response = await fetch(`${API_URL}/webcam/continuous/stop`, { method: 'POST' });
+                const data = await response.json();
+                showStatus('webcam-status', 'info', '⏸️ Continuous detection stopped');
+            } catch (error) {
+                showStatus('webcam-status', 'danger', '❌ Error: ' + error.message);
+            }
+        }
+        
+        // File upload
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            showStatus('upload-status', 'info', 
+                `📤 Uploading ${file.name}... <span class="loading"></span>`);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${API_URL}/detect/video`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                showStatus('upload-status', 'success', 
+                    `✅ Analysis complete: ${result.accidents_detected} accidents in ${result.total_frames} frames`);
+                
+                displayVideoResult('upload-result', result);
+            } catch (error) {
+                showStatus('upload-status', 'danger', '❌ Upload failed: ' + error.message);
+            }
+        }
+        
+        // History functions
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/accidents/history?limit=20`);
+                const data = await response.json();
+                
+                const historyDiv = document.getElementById('history-content');
+                
+                if (data.accidents.length === 0) {
+                    historyDiv.innerHTML = '<p style="text-align:center; padding:40px; color:#999;">No accidents detected yet</p>';
+                    return;
+                }
+                
+                let html = `<h3>Total Accidents: ${data.total}</h3>`;
+                data.accidents.forEach(acc => {
+                    html += `
+                        <div class="result-card accident-alert">
+                            <strong>🚨 ${acc.id}</strong><br>
+                            Time: ${new Date(acc.timestamp).toLocaleString()}<br>
+                            Confidence: ${(acc.confidence * 100).toFixed(1)}%<br>
+                            Camera: ${acc.camera_id || 'Unknown'}
+                        </div>
+                    `;
+                });
+                
+                historyDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('history-content').innerHTML = 
+                    `<div class="status-danger">❌ Failed to load history: ${error.message}</div>`;
+            }
+        }
+        
+        async function resetState() {
+            if (!confirm('Reset all detection data?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/reset`, { method: 'POST' });
+                await response.json();
+                alert('✅ State reset successfully');
+                loadHistory();
+            } catch (error) {
+                alert('❌ Reset failed: ' + error.message);
+            }
+        }
+        
+        // Helper functions
+        function showStatus(elementId, type, message) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.className = `status status-${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function displayResult(elementId, result) {
+            const resultDiv = document.getElementById(elementId);
+            const isAccident = result.accident_detected;
+            
+            let html = `
+                <div class="result-card ${isAccident ? 'accident-alert' : ''}">
+                    <h3>${isAccident ? '🚨 ACCIDENT DETECTED' : '✅ No Accident'}</h3>
+                    ${isAccident ? `<strong>ID: ${result.accident_id}</strong><br>` : ''}
+                    <strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%<br>
+                    <strong>Vehicles:</strong> ${result.vehicles.length}<br>
+                    <strong>Method:</strong> ${result.verification_method}<br>
+                    <strong>Time:</strong> ${new Date(result.timestamp).toLocaleString()}
+                    
+                    ${result.vehicles.length > 0 ? `
+                        <div class="vehicle-list">
+                            ${result.vehicles.map(v => `
+                                <div class="vehicle-item">
+                                    <strong>Vehicle ${v.id}</strong><br>
+                                    Speed: ${v.speed.toFixed(1)}<br>
+                                    Stopped: ${v.stopped_time.toFixed(1)}s
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        function displayVideoResult(elementId, result) {
+            const resultDiv = document.getElementById(elementId);
+            
+            let html = `
+                <div class="result-card">
+                    <h3>Video Analysis Results</h3>
+                    <strong>Total Frames:</strong> ${result.total_frames}<br>
+                    <strong>Frames Analyzed:</strong> ${result.frames_analyzed}<br>
+                    <strong>Accidents Detected:</strong> ${result.accidents_detected}<br>
+                    <strong>Status:</strong> ${result.status}
+                </div>
+            `;
+            
+            if (result.results && result.results.length > 0) {
+                html += '<h4>Detected Accidents:</h4>';
+                result.results.filter(r => r.accident_detected).forEach(r => {
+                    html += `
+                        <div class="result-card accident-alert">
+                            Frame: ${r.frame_number} (${r.timestamp.toFixed(1)}s)<br>
+                            Confidence: ${(r.confidence * 100).toFixed(1)}%<br>
+                            Vehicles: ${r.vehicles.length}
+                        </div>
+                    `;
+                });
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // Auto-refresh continuous detection results
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${API_URL}/webcam/status`);
+                const status = await response.json();
+                
+                if (status.detection_running) {
+                    // Could auto-refresh history or show live updates here
+                }
+            } catch (error) {
+                // Silently fail
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,15 +1,19 @@
 import cv2
 import time
 import numpy as np
+from pathlib import Path
 from ultralytics import YOLO
 
 from clip_writer import add_frame, save_clip, buffer
 from accident_logic import is_accident
 
 # CONFIG
+SCRIPT_DIR = Path(__file__).parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
 VIDEO_SOURCE = "video.mp4"
-MODEL_PATH = "yolov8s.pt"
-CNN_MODEL_PATH = "models/tf_lite_model.tflite"
+MODEL_PATH = str(PROJECT_ROOT / "yolov8s.pt")
+CNN_MODEL_PATH = str(PROJECT_ROOT / "models" / "accident_detection_model.pth")
 
 FPS = 10
 POST_EVENT_SECONDS = 5
@@ -28,14 +32,14 @@ AccidentDecisionFusion = None
 
 if ENABLE_CNN_VERIFICATION:
     try:
-        from cnn_verifier import CNNAccidentVerifier, AccidentDecisionFusion
+        from cnn_verifier_pytorch import CNNAccidentVerifier, AccidentDecisionFusion
         cnn_verifier = CNNAccidentVerifier(
             model_path=CNN_MODEL_PATH,
             input_size=(250, 250),
             confidence_threshold=CNN_CONFIDENCE_THRESHOLD,
             num_verification_frames=5
         )
-        print("✅ CNN Verification: ENABLED")
+        print("✅ CNN Verification: ENABLED (PyTorch)")
     except ImportError as e:
         print(f"⚠️ CNN Verifier not available: {e}")
         print("   Falling back to YOLO-only mode")

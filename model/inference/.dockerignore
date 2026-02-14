@@ -1,0 +1,60 @@
+# .dockerignore for EMERGE AI API
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Logs
+*.log
+logs/
+
+# Dataset and training data (don't include in API image)
+data/
+dataset/
+raw/
+training/
+
+# Large files
+*.mp4
+*.avi
+*.mov
+
+# Test files
+test_*.py
+*_test.py
+
+# Documentation
+*.md
+!README_API.md
+
+# Git
+.git/
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db

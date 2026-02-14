@@ -27,6 +27,8 @@ const ambulanceStatusRoutes = require("./routes/ambulanceStatus.routes");
 const hospitalRoutes = require("./routes/hospital.routes");
 const signalRoutes = require("./routes/signal.routes");
 const sosRoutes = require("./routes/sos.routes");
+const videoDetectionRoutes = require("./routes/videoDetection.routes");
+const aiRoutes = require("./routes/ai.routes");
 
 const server = http.createServer(app);
 socket.init(server);
@@ -76,6 +78,8 @@ app.use("/api/ambulance-status", ambulanceStatusRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/signals", signalRoutes);
 app.use("/api/sos", sosRoutes);
+app.use("/api/video-detection", videoDetectionRoutes);
+app.use("/api/ai", aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
