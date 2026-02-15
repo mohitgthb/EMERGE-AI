@@ -34,7 +34,7 @@ class CNNAccidentVerifier:
     def __init__(
         self,
         model_path: str = "models/tf_lite_model.tflite",
-        input_size: Tuple[int, int] = (224, 224),
+        input_size: Tuple[int, int] = None,  # Auto-detect from model
         confidence_threshold: float = 0.65,
         num_verification_frames: int = 5
     ):
@@ -43,12 +43,13 @@ class CNNAccidentVerifier:
         
         Args:
             model_path: Path to the TFLite model file
-            input_size: Expected input size (width, height) for the CNN
+            input_size: Expected input size (width, height) for the CNN. 
+                       If None, auto-detected from model.
+                       Recommended: 416x416 or 640x640 for better accuracy (requires model retrain)
             confidence_threshold: Minimum confidence to confirm accident
             num_verification_frames: Number of frames to extract around event
         """
         self.model_path = model_path
-        self.input_size = input_size
         self.confidence_threshold = confidence_threshold
         self.num_verification_frames = num_verification_frames
         
@@ -60,10 +61,30 @@ class CNNAccidentVerifier:
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
         
+        # Auto-detect input size from model or use provided size
+        model_input_shape = self.input_details[0]['shape']
+        if input_size is None:
+            # Extract height and width from model shape [batch, height, width, channels]
+            self.input_size = (model_input_shape[1], model_input_shape[2])
+            print(f"🔍 Auto-detected input size from model: {self.input_size}")
+        else:
+            self.input_size = input_size
+            if (model_input_shape[1], model_input_shape[2]) != input_size:
+                print(f"⚠️  WARNING: Provided input size {input_size} doesn't match model {(model_input_shape[1], model_input_shape[2])}")
+                print(f"⚠️  Using model's expected size: {(model_input_shape[1], model_input_shape[2])}")
+                self.input_size = (model_input_shape[1], model_input_shape[2])
+        
         print(f"✅ CNN Verifier initialized")
         print(f"   Model: {model_path}")
         print(f"   Input shape: {self.input_details[0]['shape']}")
+        print(f"   Input size used: {self.input_size}")
         print(f"   Output shape: {self.output_details[0]['shape']}")
+        
+        # Provide recommendation for better accuracy
+        if self.input_size[0] < 416:
+            print(f"💡 RECOMMENDATION: Current input size {self.input_size} is small.")
+            print(f"   For better detection accuracy, consider retraining model with 416x416 or 640x640 input.")
+            print(f"   Larger input = more detail = better accident detection!")
         
     def preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         """

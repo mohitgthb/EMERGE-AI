@@ -95,23 +95,3 @@ exports.createAccident = async (req, res) => {
 
     res.status(201).json({ accident, dispatch });
 };
-
-
-//how ml service interact with the backend 
-
-// import requests
-
-// data = {
-//   "latitude": 28.6139,
-//   "longitude": 77.2090,
-//   "severity": "HIGH",
-//   "detectedBy": "CAMERA",
-//   "confidence": 0.92,
-//   "cameraId": "CAM_12"
-// }
-
-// requests.post(
-//   "http://backend-server/api/accidents",
-//   json=data,
-//   timeout=2
-// )

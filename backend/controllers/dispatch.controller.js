@@ -4,14 +4,6 @@ const { selectBestHospital } = require("../services/hospitalSelector");
 const socket = require("../socket");
 const { getRoute } = require("../services/routingService");
 
-//distance calculation
-// function distance(a, b) {
-//     return Math.sqrt(
-//         Math.pow(a.latitude - b.latitude, 2) +
-//         Math.pow(a.longitude - b.longitude, 2)
-//     );
-// }
-
 exports.dispatchAmbulance = async (req, res) => {
     const { accidentId } = req.body;
 
@@ -65,7 +57,6 @@ exports.dispatchAmbulance = async (req, res) => {
 
     const hospital = await selectBestHospital(accident);
 
-    // Generate route from ambulance to hospital
     const route = await getRoute({
         fromLat: nearest.latitude,
         fromLng: nearest.longitude,

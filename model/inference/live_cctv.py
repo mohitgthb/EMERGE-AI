@@ -35,7 +35,7 @@ if ENABLE_CNN_VERIFICATION:
         from cnn_verifier_pytorch import CNNAccidentVerifier, AccidentDecisionFusion
         cnn_verifier = CNNAccidentVerifier(
             model_path=CNN_MODEL_PATH,
-            input_size=(250, 250),
+            input_size=None,  # Auto-detect (250x250 current, 640x640 recommended for better accuracy)
             confidence_threshold=CNN_CONFIDENCE_THRESHOLD,
             num_verification_frames=5
         )

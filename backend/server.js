@@ -8,7 +8,7 @@ const http = require("http");
 const app = express();
 
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5000", "null"],
+    origin: ["http://localhost:5173", "http://localhost:5000", "http://localhost:8000", "null"],
     credentials: true,
     optionsSuccessStatus: 200
 }));
@@ -16,7 +16,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve static files (HTML test dashboard)
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n[${timestamp}] ${req.method} ${req.path}`);
+    if (req.method === 'POST' && req.path.includes('/ai')) {
+        console.log("Request Body:", JSON.stringify(req.body, null, 2));
+    }
+    next();
+});
+
 app.use(express.static(__dirname));
 
 const prisma = require("./config/db");
@@ -29,6 +37,8 @@ const signalRoutes = require("./routes/signal.routes");
 const sosRoutes = require("./routes/sos.routes");
 const videoDetectionRoutes = require("./routes/videoDetection.routes");
 const aiRoutes = require("./routes/ai.routes");
+const cameraRoutes = require("./routes/camera.routes");
+const detectionRoutes = require("./routes/detection.routes");
 
 const server = http.createServer(app);
 socket.init(server);
@@ -80,6 +90,8 @@ app.use("/api/signals", signalRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/video-detection", videoDetectionRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/cameras", cameraRoutes);
+app.use("/api/detections", detectionRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
