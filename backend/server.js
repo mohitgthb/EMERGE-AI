@@ -8,9 +8,11 @@ const http = require("http");
 const app = express();
 
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5000", "http://localhost:8000", "null"],
+    origin: ["http://localhost:5173", "http://localhost:5000", "http://localhost:8000", "http://localhost:8080", "http://127.0.0.1:5000", "http://127.0.0.1:8080", "null"],
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json());
@@ -39,6 +41,12 @@ const videoDetectionRoutes = require("./routes/videoDetection.routes");
 const aiRoutes = require("./routes/ai.routes");
 const cameraRoutes = require("./routes/camera.routes");
 const detectionRoutes = require("./routes/detection.routes");
+const fireRoutes = require("./routes/fire.routes");
+const fireBrigadeRoutes = require("./routes/fireBrigade.routes");
+const policeRoutes = require("./routes/police.routes");
+const emergencyQueueRoutes = require("./routes/emergencyQueue.routes");
+const authRoutes = require("./routes/auth.routes");
+const demoRoutes = require("./routes/demo.routes");
 
 const server = http.createServer(app);
 socket.init(server);
@@ -80,10 +88,10 @@ async function checkDB() {
 
 checkDB();
 
+app.use("/api/auth", authRoutes);
 app.use("/api/accidents", accidentRoutes);
 app.use("/api/dispatch", dispatchRoutes);
 app.use("/api/ambulances", ambulanceRoutes);
-// Alias route for exact flow match: POST /api/ambulance-status
 app.use("/api/ambulance-status", ambulanceStatusRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/signals", signalRoutes);
@@ -92,6 +100,12 @@ app.use("/api/video-detection", videoDetectionRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/cameras", cameraRoutes);
 app.use("/api/detections", detectionRoutes);
+app.use("/api/fire", fireRoutes);
+app.use("/api/fire-brigades", fireBrigadeRoutes);
+app.use("/api/police", policeRoutes);
+app.use("/api/emergency-queue", emergencyQueueRoutes);
+app.use("/api/demo", demoRoutes);
+app.use("/uploads", express.static("uploads"));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

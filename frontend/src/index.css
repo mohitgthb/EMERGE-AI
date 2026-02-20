@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 7%;
+    --foreground: 210 20% 90%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 210 20% 90%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 20% 90%;
+
+    --primary: 210 100% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 16%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 220 14% 14%;
+    --muted-foreground: 215 12% 50%;
+
+    --accent: 220 16% 18%;
+    --accent-foreground: 210 20% 90%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 16%;
+    --input: 220 14% 16%;
+    --ring: 210 100% 52%;
+
+    --radius: 0.5rem;
+
+    /* Operational status colors */
+    --status-critical: 0 84% 60%;
+    --status-critical-foreground: 0 0% 100%;
+    --status-warning: 38 92% 50%;
+    --status-warning-foreground: 0 0% 8%;
+    --status-success: 142 71% 45%;
+    --status-success-foreground: 0 0% 100%;
+    --status-info: 210 100% 52%;
+    --status-info-foreground: 0 0% 100%;
+    --status-pending: 262 83% 58%;
+    --status-pending-foreground: 0 0% 100%;
+
+    /* Glow effects */
+    --glow-critical: 0 100% 50%;
+    --glow-primary: 210 100% 50%;
+    --glow-success: 142 100% 45%;
+    --glow-warning: 38 100% 50%;
+
+    /* Sidebar */
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 210 15% 60%;
+    --sidebar-primary: 210 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 16% 12%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 14% 12%;
+    --sidebar-ring: 210 100% 52%;
+
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  .light {
+    --background: 210 20% 98%;
+    --foreground: 220 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+
+    --primary: 215 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 20% 93%;
+    --secondary-foreground: 220 18% 30%;
+
+    --muted: 214 18% 93%;
+    --muted-foreground: 215 14% 45%;
+
+    --accent: 214 20% 93%;
+    --accent-foreground: 220 18% 15%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 18% 87%;
+    --input: 214 18% 87%;
+    --ring: 215 100% 50%;
+
+    /* Operational status colors — bolder for light bg */
+    --status-critical: 0 84% 50%;
+    --status-critical-foreground: 0 0% 100%;
+    --status-warning: 38 92% 45%;
+    --status-warning-foreground: 0 0% 8%;
+    --status-success: 142 71% 38%;
+    --status-success-foreground: 0 0% 100%;
+    --status-info: 215 100% 50%;
+    --status-info-foreground: 0 0% 100%;
+    --status-pending: 262 83% 55%;
+    --status-pending-foreground: 0 0% 100%;
+
+    /* Glow effects — softer for light theme */
+    --glow-critical: 0 100% 50%;
+    --glow-primary: 215 100% 50%;
+    --glow-success: 142 100% 40%;
+    --glow-warning: 38 100% 50%;
+
+    /* Sidebar */
+    --sidebar-background: 210 18% 96%;
+    --sidebar-foreground: 215 14% 45%;
+    --sidebar-primary: 215 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 20% 91%;
+    --sidebar-accent-foreground: 220 18% 15%;
+    --sidebar-border: 214 18% 87%;
+    --sidebar-ring: 215 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .glow-critical {
+    box-shadow: 0 0 20px -5px hsl(var(--glow-critical) / 0.4),
+                0 0 40px -10px hsl(var(--glow-critical) / 0.2);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px -5px hsl(var(--glow-primary) / 0.4),
+                0 0 40px -10px hsl(var(--glow-primary) / 0.2);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px -5px hsl(var(--glow-success) / 0.3);
+  }
+
+  .glow-warning {
+    box-shadow: 0 0 20px -5px hsl(var(--glow-warning) / 0.3);
+  }
+
+  .pulse-critical {
+    animation: pulse-critical 2s ease-in-out infinite;
+  }
+
+  .grid-ops {
+    background-image: 
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .text-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container {
+  background: hsl(220, 20%, 7%) !important;
+}
+
+.light .leaflet-container {
+  background: hsl(210, 20%, 98%) !important;
+}
+
+.leaflet-control-zoom a {
+  background: hsl(220, 18%, 12%) !important;
+  color: hsl(210, 20%, 90%) !important;
+  border-color: hsl(220, 14%, 16%) !important;
+}
+
+.light .leaflet-control-zoom a {
+  background: hsl(0, 0%, 100%) !important;
+  color: hsl(220, 20%, 12%) !important;
+  border-color: hsl(214, 18%, 87%) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: hsl(220, 16%, 18%) !important;
+}
+
+.light .leaflet-control-zoom a:hover {
+  background: hsl(214, 20%, 93%) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: hsl(220, 18%, 10%) !important;
+  color: hsl(210, 20%, 90%) !important;
+  border: 1px solid hsl(220, 14%, 16%) !important;
+  border-radius: 0.5rem !important;
+}
+
+.light .leaflet-popup-content-wrapper {
+  background: hsl(0, 0%, 100%) !important;
+  color: hsl(220, 20%, 12%) !important;
+  border: 1px solid hsl(214, 18%, 87%) !important;
+}
+
+.leaflet-popup-tip {
+  background: hsl(220, 18%, 10%) !important;
+}
+
+.light .leaflet-popup-tip {
+  background: hsl(0, 0%, 100%) !important;
+}
+
+.leaflet-control-layers {
+  background: hsl(220, 18%, 10%) !important;
+  color: hsl(210, 20%, 90%) !important;
+  border-color: hsl(220, 14%, 16%) !important;
+}
+
+.light .leaflet-control-layers {
+  background: hsl(0, 0%, 100%) !important;
+  color: hsl(220, 20%, 12%) !important;
+  border-color: hsl(214, 18%, 87%) !important;
+}

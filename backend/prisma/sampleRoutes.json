@@ -1,0 +1,224 @@
+{
+  "_description": "Route reference waypoints between key Pune locations for demo simulation. Each route is an array of [longitude, latitude] pairs (GeoJSON order) representing major road waypoints.",
+
+  "routes": {
+    "shivajinagar_to_ruby_hall": {
+      "label": "Shivajinagar → Ruby Hall Clinic",
+      "from": "Shivajinagar",
+      "to": "Ruby Hall Clinic (Sassoon Rd)",
+      "distanceKm": 3.2,
+      "estimatedMinutes": 8,
+      "waypoints": [
+        [73.8446, 18.5314],
+        [73.8468, 18.5255],
+        [73.8500, 18.5260],
+        [73.8560, 18.5270],
+        [73.8630, 18.5280],
+        [73.8700, 18.5300],
+        [73.8760, 18.5320],
+        [73.8819, 18.5336]
+      ]
+    },
+
+    "hinjewadi_to_jupiter": {
+      "label": "Hinjewadi → Jupiter Hospital (Baner)",
+      "from": "Hinjewadi Phase 1",
+      "to": "Jupiter Hospital",
+      "distanceKm": 5.5,
+      "estimatedMinutes": 12,
+      "waypoints": [
+        [73.7389, 18.5912],
+        [73.7450, 18.5880],
+        [73.7530, 18.5830],
+        [73.7600, 18.5780],
+        [73.7650, 18.5720],
+        [73.7680, 18.5680],
+        [73.7710, 18.5640]
+      ]
+    },
+
+    "kothrud_to_sahyadri": {
+      "label": "Kothrud → Sahyadri Hospital Deccan",
+      "from": "Kothrud Depot",
+      "to": "Sahyadri Hospital Deccan",
+      "distanceKm": 1.5,
+      "estimatedMinutes": 5,
+      "waypoints": [
+        [73.8077, 18.5074],
+        [73.8100, 18.5090],
+        [73.8150, 18.5100],
+        [73.8200, 18.5110],
+        [73.8300, 18.5130],
+        [73.8370, 18.5150],
+        [73.8410, 18.5160]
+      ]
+    },
+
+    "hadapsar_to_noble": {
+      "label": "Hadapsar → Noble Hospital",
+      "from": "Hadapsar Gadital",
+      "to": "Noble Hospital Hadapsar",
+      "distanceKm": 1.8,
+      "estimatedMinutes": 5,
+      "waypoints": [
+        [73.9260, 18.5089],
+        [73.9280, 18.5070],
+        [73.9300, 18.5060],
+        [73.9320, 18.5050],
+        [73.9350, 18.5050]
+      ]
+    },
+
+    "wagholi_to_sassoon": {
+      "label": "Wagholi → Sassoon General Hospital",
+      "from": "Wagholi",
+      "to": "Sassoon General Hospital",
+      "distanceKm": 14.0,
+      "estimatedMinutes": 28,
+      "waypoints": [
+        [73.9787, 18.5679],
+        [73.9600, 18.5600],
+        [73.9400, 18.5500],
+        [73.9280, 18.5400],
+        [73.9200, 18.5350],
+        [73.9100, 18.5300],
+        [73.8960, 18.5280],
+        [73.8850, 18.5260],
+        [73.8780, 18.5240],
+        [73.8697, 18.5226]
+      ]
+    },
+
+    "baner_to_jupiter": {
+      "label": "Baner → Jupiter Hospital",
+      "from": "Baner Road",
+      "to": "Jupiter Hospital",
+      "distanceKm": 2.0,
+      "estimatedMinutes": 6,
+      "waypoints": [
+        [73.7868, 18.5590],
+        [73.7840, 18.5580],
+        [73.7800, 18.5650],
+        [73.7750, 18.5640],
+        [73.7710, 18.5640]
+      ]
+    },
+
+    "swargate_to_kem": {
+      "label": "Swargate → KEM Hospital",
+      "from": "Swargate Chowk",
+      "to": "KEM Hospital Pune",
+      "distanceKm": 2.5,
+      "estimatedMinutes": 7,
+      "waypoints": [
+        [73.8553, 18.5196],
+        [73.8580, 18.5150],
+        [73.8600, 18.5100],
+        [73.8620, 18.5050],
+        [73.8630, 18.5000],
+        [73.8645, 18.4975]
+      ]
+    },
+
+    "katraj_to_kem": {
+      "label": "Katraj → KEM Hospital",
+      "from": "Katraj Chowk",
+      "to": "KEM Hospital Pune",
+      "distanceKm": 5.0,
+      "estimatedMinutes": 12,
+      "waypoints": [
+        [73.8686, 18.4616],
+        [73.8670, 18.4700],
+        [73.8660, 18.4780],
+        [73.8650, 18.4850],
+        [73.8645, 18.4920],
+        [73.8645, 18.4975]
+      ]
+    },
+
+    "pune_camp_to_ruby_hall": {
+      "label": "Pune Camp Fire Station → Ruby Hall Clinic",
+      "from": "Pune Camp (Fire Brigade)",
+      "to": "Ruby Hall Clinic",
+      "distanceKm": 1.5,
+      "estimatedMinutes": 4,
+      "waypoints": [
+        [73.8807, 18.5196],
+        [73.8810, 18.5230],
+        [73.8815, 18.5270],
+        [73.8817, 18.5300],
+        [73.8819, 18.5336]
+      ]
+    },
+
+    "pimpri_to_ab_memorial": {
+      "label": "Pimpri Fire Station → Aditya Birla Memorial",
+      "from": "Pimpri (Fire Brigade)",
+      "to": "Aditya Birla Memorial Hospital",
+      "distanceKm": 3.5,
+      "estimatedMinutes": 8,
+      "waypoints": [
+        [73.7997, 18.6298],
+        [73.7950, 18.6350],
+        [73.7880, 18.6400],
+        [73.7820, 18.6430],
+        [73.7760, 18.6480]
+      ]
+    },
+
+    "university_circle_loop": {
+      "label": "University Circle → Deccan → JM Road → FC Road (patrol loop)",
+      "from": "University Circle",
+      "to": "FC Road / University Circle",
+      "distanceKm": 3.0,
+      "estimatedMinutes": 10,
+      "waypoints": [
+        [73.8468, 18.5255],
+        [73.8440, 18.5230],
+        [73.8410, 18.5200],
+        [73.8400, 18.5160],
+        [73.8380, 18.5180],
+        [73.8400, 18.5220],
+        [73.8420, 18.5280],
+        [73.8468, 18.5255]
+      ]
+    },
+
+    "chandni_chowk_to_sahyadri": {
+      "label": "Chandni Chowk → Sahyadri Hospital Deccan",
+      "from": "Chandni Chowk Bavdhan",
+      "to": "Sahyadri Hospital Deccan",
+      "distanceKm": 4.5,
+      "estimatedMinutes": 10,
+      "waypoints": [
+        [73.7812, 18.5130],
+        [73.7900, 18.5120],
+        [73.8000, 18.5110],
+        [73.8100, 18.5120],
+        [73.8200, 18.5130],
+        [73.8300, 18.5140],
+        [73.8370, 18.5150],
+        [73.8410, 18.5160]
+      ]
+    }
+  },
+
+  "junctionMap": {
+    "_description": "Quick lookup for major Pune junctions used by green corridor logic",
+    "university_chowk":       { "lat": 18.5255, "lng": 73.8468 },
+    "swargate_chowk":         { "lat": 18.5012, "lng": 73.8630 },
+    "chandni_chowk":          { "lat": 18.5130, "lng": 73.7812 },
+    "hinjewadi_chowk":        { "lat": 18.5912, "lng": 73.7389 },
+    "wakad_chowk":            { "lat": 18.5953, "lng": 73.7614 },
+    "baner_sus_road":         { "lat": 18.5580, "lng": 73.7880 },
+    "deccan_gymkhana":        { "lat": 18.5160, "lng": 73.8400 },
+    "fc_road_jm_road":        { "lat": 18.5280, "lng": 73.8420 },
+    "magarpatta_road":        { "lat": 18.5150, "lng": 73.9340 },
+    "rto_koregaon_park":      { "lat": 18.5370, "lng": 73.8960 },
+    "katraj_chowk":           { "lat": 18.4580, "lng": 73.8650 },
+    "hadapsar_gadital":       { "lat": 18.5070, "lng": 73.9280 },
+    "nigdi_pradhikaran":      { "lat": 18.6500, "lng": 73.7720 },
+    "shivajinagar_st_stand":  { "lat": 18.5340, "lng": 73.8500 },
+    "kothrud_depo":           { "lat": 18.5100, "lng": 73.8110 }
+  }
+}

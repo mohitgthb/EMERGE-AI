@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency SOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .emergency-type {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .type-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .type-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .type-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        #camera-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        video, #preview {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        video.active, #preview.active {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-camera {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-camera:hover {
+            background: #218838;
+        }
+
+        .btn-sos {
+            background: #dc3545;
+            color: white;
+            font-size: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .btn-sos:hover {
+            background: #c82333;
+        }
+
+        .btn-sos:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            display: block;
+        }
+
+        .location-info {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
+
+        .location-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency SOS</h1>
+        <p class="subtitle">Immediate help is just one click away</p>
+
+        <div style="background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #856404;">
+            <strong>⚠️ Note:</strong> Access this page at <strong>http://localhost:5000/sos-emergency.html</strong>
+        </div>
+
+        <div class="emergency-type">
+            <button class="type-btn" data-type="MEDICAL">🏥 Medical</button>
+            <button class="type-btn" data-type="SAFETY">🚓 Safety</button>
+            <button class="type-btn" data-type="FIRE">🔥 Fire</button>
+            <button class="type-btn" data-type="ACCIDENT">🚑 Accident</button>
+        </div>
+
+        <div id="camera-section">
+            <p style="margin-bottom: 10px; color: #666; font-size: 14px;">📸 Capture emergency evidence (optional)</p>
+            <video id="video" autoplay playsinline></video>
+            <img id="preview" alt="Captured image">
+            <button class="btn btn-camera" id="capture-btn" style="display: none;">📷 Capture Image</button>
+            <button class="btn btn-camera" id="retake-btn" style="display: none;">🔄 Retake</button>
+        </div>
+
+        <button class="btn btn-sos" id="sos-btn" disabled>🚨 SEND SOS</button>
+
+        <div class="status" id="status"></div>
+
+        <div class="location-info" id="location-info" style="display: none;">
+            <strong>📍 Your Location:</strong><br>
+            <span id="coords"></span><br>
+            <strong>🖥️ Device IP:</strong> <span id="device-ip">Detecting...</span>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = null;
+        let latitude = null;
+        let longitude = null;
+        let deviceIP = null;
+        let capturedImage = null;
+        let stream = null;
+
+        const video = document.getElementById('video');
+        const preview = document.getElementById('preview');
+        const captureBtn = document.getElementById('capture-btn');
+        const retakeBtn = document.getElementById('retake-btn');
+        const sosBtn = document.getElementById('sos-btn');
+        const statusDiv = document.getElementById('status');
+        const locationInfo = document.getElementById('location-info');
+
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedType = btn.dataset.type;
+                checkFormReady();
+            });
+        });
+
+        async function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        latitude = position.coords.latitude;
+                        longitude = position.coords.longitude;
+                        document.getElementById('coords').textContent = 
+                            `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                        locationInfo.style.display = 'block';
+                        resolve();
+                    },
+                    error => {
+                        reject(error);
+                    },
+                    { enableHighAccuracy: true }
+                );
+            });
+        }
+
+        async function getDeviceIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                deviceIP = data.ip;
+                document.getElementById('device-ip').textContent = deviceIP;
+            } catch (error) {
+                console.error('Failed to get IP:', error);
+                document.getElementById('device-ip').textContent = 'N/A';
+            }
+        }
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                });
+                video.srcObject = stream;
+                video.classList.add('active');
+                captureBtn.style.display = 'block';
+            } catch (error) {
+                console.error('Camera error:', error);
+                showStatus('Camera access denied. You can still send SOS without image.', 'info');
+            }
+        }
+
+        captureBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                capturedImage = blob;
+                preview.src = URL.createObjectURL(blob);
+                preview.classList.add('active');
+                video.classList.remove('active');
+                captureBtn.style.display = 'none';
+                retakeBtn.style.display = 'block';
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            }, 'image/jpeg', 0.8);
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            capturedImage = null;
+            preview.classList.remove('active');
+            retakeBtn.style.display = 'none';
+            startCamera();
+        });
+
+        sosBtn.addEventListener('click', async () => {
+            sosBtn.disabled = true;
+            showStatus('Sending SOS...', 'info');
+
+            const formData = new FormData();
+            formData.append('latitude', latitude);
+            formData.append('longitude', longitude);
+            formData.append('emergencyType', selectedType);
+            formData.append('severity', 'HIGH');
+            
+            if (capturedImage) {
+                formData.append('emergencyImage', capturedImage, 'emergency.jpg');
+            }
+
+            try {
+                const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                    ? 'http://localhost:5000'
+                    : window.location.origin;
+                
+                const response = await fetch(`${API_URL}/api/sos`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showStatus(`✅ ${data.message} | ID: ${data.sosEventId}`, 'success');
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    showStatus(`❌ ${data.message}`, 'error');
+                    sosBtn.disabled = false;
+                }
+            } catch (error) {
+                showStatus('❌ Failed to send SOS. Please try again.', 'error');
+                sosBtn.disabled = false;
+            }
+        });
+
+        function checkFormReady() {
+            sosBtn.disabled = !(selectedType && latitude && longitude);
+        }
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        (async function init() {
+            showStatus('Getting your location...', 'info');
+            try {
+                await getLocation();
+                await getDeviceIP();
+                await startCamera();
+                showStatus('Select emergency type and click SOS', 'info');
+                checkFormReady();
+            } catch (error) {
+                showStatus('⚠️ Location access required for SOS', 'error');
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,8 +1,9 @@
 const express = require("express");
-const { addHospital } = require("../controllers/hospital.controller");
+const { addHospital, listHospitals } = require("../controllers/hospital.controller");
 
 const router = express.Router();
 
+router.get("/", listHospitals);
 router.post("/", addHospital);
 
 module.exports = router;

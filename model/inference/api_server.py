@@ -561,10 +561,11 @@ async def root():
         "mode": "backend-orchestrated",
         "endpoints": {
             "health": "/health",
+            "analyze": "/analyze (POST) - Single image analysis for SOS",
             "detect_camera": "/detect/camera (POST)",
             "detect_video": "/detect/video (POST)"
         },
-        "note": "Other endpoints are commented out. Backend manages cameras and video sources."
+        "note": "Backend manages cameras and video sources. /analyze is used for SOS camera flow."
     }
 
 
@@ -577,6 +578,146 @@ async def health_check():
         cnn_available=STATE.cnn_verifier is not None,
         timestamp=datetime.now().isoformat()
     )
+
+
+@app.post("/analyze")
+async def analyze_image(file: UploadFile = File(...)):
+    """
+    Analyze a single image for accident/emergency detection.
+    Used by the SOS camera flow — user captures a photo and sends it for AI verification.
+
+    Runs YOLO object detection + CNN accident verification on the uploaded image.
+
+    Returns:
+        JSON with accident_detected, fire_detected, confidence, severity, vehicles
+    """
+    try:
+        # Read uploaded image
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            raise HTTPException(status_code=400, detail="Invalid image file")
+
+        print(f"\n📸 SOS Image Analysis")
+        print(f"   Image size: {frame.shape[1]}x{frame.shape[0]}")
+
+        if STATE.yolo_model is None:
+            raise HTTPException(status_code=500, detail="YOLO model not loaded")
+
+        # Run YOLO detection (not tracking — single image, no temporal data)
+        results = STATE.yolo_model(frame, conf=CONFIG.yolo_confidence, verbose=False)
+
+        vehicles = []
+        vehicle_count = 0
+        fallen_person_detected = False
+
+        if results and len(results) > 0 and results[0].boxes is not None:
+            boxes = results[0].boxes
+            for box in boxes:
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+                x1, y1, x2, y2 = [int(c) for c in box.xyxy[0].cpu().numpy()]
+
+                # Vehicle classes: car(2), motorcycle(3), bus(5), truck(7)
+                if cls in [2, 3, 5, 7]:
+                    vehicle_count += 1
+                    vehicles.append({
+                        "class": cls,
+                        "confidence": round(conf, 3),
+                        "bounding_box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
+                    })
+                # Fallen person class (index 5 in custom model = "fallen_person")
+                if cls == 5:
+                    # Check if this is the custom model's fallen_person class
+                    class_name = STATE.yolo_model.names.get(cls, "")
+                    if "fallen" in class_name.lower():
+                        fallen_person_detected = True
+
+        # CNN verification on the full image
+        accident_detected = False
+        cnn_confidence = 0.0
+        verification_method = "yolo_only"
+
+        if CONFIG.enable_cnn_verification and STATE.cnn_verifier:
+            try:
+                preprocessed = STATE.cnn_verifier.preprocess_frame(frame)
+                cnn_confidence = STATE.cnn_verifier.run_inference(preprocessed)
+                verification_method = "cnn"
+
+                print(f"   CNN confidence: {cnn_confidence:.3f} (threshold: {CONFIG.cnn_confidence_threshold})")
+
+                if cnn_confidence >= CONFIG.cnn_confidence_threshold:
+                    accident_detected = True
+
+                # If vehicles detected, also check vehicle ROIs for higher accuracy
+                if vehicles and not accident_detected:
+                    roi_confidences = []
+                    for v in vehicles[:3]:  # Check up to 3 vehicle regions
+                        bb = v["bounding_box"]
+                        roi = frame[bb["y1"]:bb["y2"], bb["x1"]:bb["x2"]]
+                        if roi.size > 0:
+                            roi_prep = STATE.cnn_verifier.preprocess_frame(roi)
+                            roi_conf = STATE.cnn_verifier.run_inference(roi_prep)
+                            roi_confidences.append(roi_conf)
+                    if roi_confidences:
+                        max_roi_conf = max(roi_confidences)
+                        print(f"   ROI confidences: {[round(c, 3) for c in roi_confidences]}")
+                        if max_roi_conf >= CONFIG.cnn_confidence_threshold:
+                            accident_detected = True
+                            cnn_confidence = max(cnn_confidence, max_roi_conf)
+                            verification_method = "cnn_roi"
+
+            except Exception as e:
+                print(f"   ⚠️ CNN verification error: {e}")
+                # Fall back to vehicle heuristics
+                if vehicle_count >= 2 or fallen_person_detected:
+                    accident_detected = True
+                    cnn_confidence = 0.5
+                    verification_method = "heuristic"
+        else:
+            # No CNN available — use simple heuristics
+            if vehicle_count >= 2 or fallen_person_detected:
+                accident_detected = True
+                cnn_confidence = 0.5
+                verification_method = "heuristic"
+            print(f"   ⚠️ CNN not available, using heuristics (vehicles: {vehicle_count}, fallen: {fallen_person_detected})")
+
+        # Calculate severity
+        severity = None
+        if accident_detected:
+            severity = calculate_severity(cnn_confidence)
+
+        # Save a copy of the analyzed image if accident detected
+        accident_id = None
+        if accident_detected:
+            accident_id = f"SOS_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+            save_path = Path("accidents") / f"sos_{accident_id}.jpg"
+            cv2.imwrite(str(save_path), frame)
+            print(f"   💾 Saved evidence: {save_path}")
+
+        print(f"   Result: accident={'YES' if accident_detected else 'NO'}, confidence={cnn_confidence:.3f}, method={verification_method}")
+
+        return JSONResponse(content={
+            "accident_detected": accident_detected,
+            "fire_detected": False,  # Fire detection not supported by current model
+            "confidence": round(cnn_confidence, 3),
+            "severity": severity,
+            "accident_id": accident_id,
+            "vehicles_detected": vehicle_count,
+            "vehicles": vehicles,
+            "verification_method": verification_method,
+            "timestamp": datetime.now().isoformat(),
+        })
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"   ❌ Analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
 
 
 # COMMENTED OUT - Not needed for backend-orchestrated flow

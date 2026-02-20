@@ -1,5 +1,17 @@
 const prisma = require("../config/db");
 
+exports.listHospitals = async (req, res) => {
+  try {
+    const hospitals = await prisma.hospital.findMany({
+      orderBy: { name: "asc" },
+    });
+    res.json(hospitals);
+  } catch (error) {
+    console.error("Error listing hospitals:", error);
+    res.status(500).json({ message: "Failed to fetch hospitals", error: error.message });
+  }
+};
+
 exports.addHospital = async (req, res) => {
   const { name, latitude, longitude, beds } = req.body;
 

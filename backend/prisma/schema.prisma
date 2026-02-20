@@ -22,17 +22,80 @@ model User {
   createdAt    DateTime @default(now())
 }
 
+model SOSEvent {
+  id            String   @id @default(uuid())
+  latitude      Float
+  longitude     Float
+  emergencyType String   //MEDICAL || SAFETY || FIRE || ACCIDENT
+  severity      String   @default("HIGH")
+  
+  imageUrl      String?
+  deviceIP      String?
+  deviceMAC     String?
+  userAgent     String?
+  deviceFingerprint String?
+  
+  isVerified    Boolean  @default(false)
+  verificationMethod String? //AI || MANUAL
+  status        String   @default("PENDING") //PENDING || CONFIRMED || REJECTED || ESCALATED
+  
+  lastSOSAt     DateTime?
+  sosCount      Int      @default(0)
+
+  // Incident clustering
+  clusterId     String?  // UUID of the parent/primary incident in cluster
+  clusterCount  Int      @default(1)
+  severityScore Int      @default(1) // incremented for each merged report
+  
+  createdAt     DateTime @default(now())
+  
+  policeDispatch PoliceDispatch?
+}
+
 model Accident {
+  id            String   @id @default(uuid())
+  latitude      Float
+  longitude     Float
+  severity      String   
+  detectedBy    String   
+  confidence    Float?
+  cameraId      String?
+  emergencyType String   @default("ACCIDENT") //ACCIDENT || FIRE || MEDICAL
+  createdAt     DateTime @default(now())
+
+  dispatch      Dispatch?
+  queueEntry    EmergencyQueue?
+}
+
+model FireIncident {
   id         String   @id @default(uuid())
   latitude   Float
   longitude  Float
-  severity   String    //low || medium || high
-  detectedBy String    //camera || manual
-  confidence  Float?
-  cameraId    String?
-  createdAt DateTime @default(now())
+  severity   String
+  detectedBy String
+  confidence Float?
+  cameraId   String?
+  createdAt  DateTime @default(now())
 
-  dispatch   Dispatch?
+  dispatch   FireDispatch?
+  queueEntry EmergencyQueue?
+}
+
+model EmergencyQueue {
+  id            String   @id @default(uuid())
+  emergencyType String   //ACCIDENT || FIRE
+  emergencyId   String   @unique
+  confidence    Float
+  severity      String
+  latitude      Float
+  longitude     Float
+  status        String   @default("PENDING") //PENDING || CONFIRMED || REJECTED
+  assignedTo    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime @default(now())
+  
+  accident      Accident?     @relation(fields: [emergencyId], references: [id], map: "EmergencyQueue_accident_fkey")
+  fireIncident  FireIncident? @relation(fields: [emergencyId], references: [id], map: "EmergencyQueue_fire_fkey")
 }
 
 model Ambulance {
@@ -55,6 +118,7 @@ model Hospital {
   updatedAt  DateTime  @updatedAt
 
   dispatches Dispatch[]
+  operators  Operator[]
 }
 
 model Dispatch {
@@ -63,18 +127,69 @@ model Dispatch {
   ambulanceId String
   hospitalId  String
 
+  status       String   @default("ACTIVE") // ACTIVE | EN_ROUTE | ARRIVED | FAILED_ASSIGNMENT | REASSIGNED | COMPLETED
+  reassignCount Int     @default(0)
+  replacedById  String? // ID of new dispatch if this one was reassigned
+
   startTime   DateTime @default(now())
   endtime     DateTime?
 
-  // Route information for navigation
   routeProvider    String?
   routeDistanceKm  Float?
   routeDurationSec Int?
   routeGeometry    Json?
 
+  // Hospital route (incident → hospital)
+  hospitalRouteProvider    String?
+  hospitalRouteDistanceKm  Float?
+  hospitalRouteDurationSec Int?
+  hospitalRouteGeometry    Json?
+
   accident    Accident  @relation(fields: [accidentId], references: [id])
   ambulance   Ambulance @relation(fields: [ambulanceId], references: [id])
   hospital    Hospital  @relation(fields: [hospitalId], references: [id])
+}
+
+model FireDispatch {
+  id             String   @id @default(uuid())
+  fireIncidentId String   @unique
+  fireBrigadeId  String
+  
+  status         String   @default("ACTIVE") // ACTIVE | FAILED_ASSIGNMENT | REASSIGNED | COMPLETED
+  reassignCount  Int      @default(0)
+  replacedById   String?
+
+  startTime      DateTime @default(now())
+  endtime        DateTime?
+  
+  routeProvider    String?
+  routeDistanceKm  Float?
+  routeDurationSec Int?
+  routeGeometry    Json?
+
+  fireIncident   FireIncident @relation(fields: [fireIncidentId], references: [id])
+  fireBrigade    FireBrigade  @relation(fields: [fireBrigadeId], references: [id])
+}
+
+model PoliceDispatch {
+  id           String   @id @default(uuid())
+  sosEventId   String   @unique
+  policeUnitId String
+  
+  status       String   @default("ACTIVE") // ACTIVE | FAILED_ASSIGNMENT | REASSIGNED | COMPLETED
+  reassignCount Int     @default(0)
+  replacedById  String?
+
+  startTime    DateTime @default(now())
+  endtime      DateTime?
+  
+  routeProvider    String?
+  routeDistanceKm  Float?
+  routeDurationSec Int?
+  routeGeometry    Json?
+
+  sosEvent     SOSEvent @relation(fields: [sosEventId], references: [id])
+  policeUnit   PoliceUnit @relation(fields: [policeUnitId], references: [id])
 }
 
 model TrafficSignal {
@@ -86,6 +201,28 @@ model TrafficSignal {
   updatedAt  DateTime @updatedAt
 }
 
+model FireBrigade {
+  id         String   @id @default(uuid())
+  vehicleNo  String   @unique
+  latitude   Float
+  longitude  Float
+  status     String   //AVAILABLE || BUSY || EN_ROUTE || ARRIVED
+  updatedAt  DateTime @updatedAt
+
+  dispatches FireDispatch[]
+}
+
+model PoliceUnit {
+  id         String   @id @default(uuid())
+  vehicleNo  String   @unique
+  latitude   Float
+  longitude  Float
+  status     String   //AVAILABLE || BUSY || EN_ROUTE || ARRIVED
+  updatedAt  DateTime @updatedAt
+
+  dispatches PoliceDispatch[]
+}
+
 model Camera {
   id          String   @id @default(uuid())
   cameraId    String   @unique
@@ -95,9 +232,39 @@ model Camera {
   longitude   Float
   rtspUrl     String?
   videoPath   String?
-  streamType  String   @default("RTSP") // RTSP || FILE || HTTP
+  streamType  String   @default("RTSP")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Operator {
+  id           String   @id @default(uuid())
+  operatorId   String   @unique          // login username e.g. "AMB-001"
+  password     String                    // bcrypt hash
+  name         String
+  role         String                    // AMBULANCE | FIRE_BRIGADE | POLICE | HOSPITAL | ADMIN
+  vehicleId    String?  @unique          // FK to Ambulance/FireBrigade/PoliceUnit id
+  hospitalId   String?  @unique          // FK to Hospital id (for HOSPITAL role)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id])
+}
+
+model StatusHistory {
+  id          String   @id @default(uuid())
+  dispatchId  String                   // references any dispatch type
+  dispatchType String                  // ACCIDENT | FIRE | POLICE
+  vehicleId   String
+  vehicleType String                   // AMBULANCE | FIRE_BRIGADE | POLICE
+  status      String                   // EN_ROUTE | ARRIVED | COMPLETED etc
+  latitude    Float?
+  longitude   Float?
+  timestamp   DateTime @default(now())
+
+  @@index([dispatchId])
+  @@index([vehicleId])
 }
 
