@@ -316,7 +316,7 @@ export default function SOSPage() {
   return (
     <div className="space-y-6">
       {/* SOS Trigger Section */}
-      <div className="rounded-xl border-2 border-status-critical/20 bg-status-critical/5 p-6">
+      <div className="rounded-xl border-2 border-status-critical/20 bg-status-critical/5 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DemoModeToggle } from '@/components/DemoModeToggle';
+import { PredictiveInsightsWidget } from '@/components/PredictiveInsightsWidget';
 
 const allRoles: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Admin' },
@@ -30,7 +31,7 @@ const allRoles: { value: UserRole; label: string }[] = [
 type VehicleRow = { id: string; callSign: string; type: string; status: string };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'vehicles' | 'dispatches' | 'operators' | 'roles' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'vehicles' | 'dispatches' | 'operators' | 'roles' | 'analytics' | 'predictive'>('overview');
   const { accidents, fireIncidents, sosEvents, ambulances, fireBrigades, policeUnits, dispatches, analytics, loading, connected } = useEmergencyStore();
 
   if (loading && !analytics) return <LoadingState label="Loading admin data..." />;
@@ -124,8 +125,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b pb-2">
-        {(['overview', 'vehicles', 'dispatches', 'operators', 'roles', 'analytics'] as const).map((tab) => (
+      <div className="flex gap-2 border-b pb-2 overflow-x-auto no-scrollbar">
+        {(['overview', 'vehicles', 'dispatches', 'operators', 'roles', 'analytics', 'predictive'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -164,8 +165,8 @@ export default function AdminDashboard() {
           {allVehicles.length === 0 ? (
             <EmptyState title="No vehicles" description="No emergency vehicles registered." />
           ) : (
-            <div className="rounded-lg border bg-card overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-lg border bg-card overflow-x-auto">
+              <table className="w-full text-sm min-w-[500px]">
                 <thead>
                   <tr className="border-b bg-secondary/50">
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Vehicle No</th>
@@ -214,7 +215,7 @@ export default function AdminDashboard() {
               { device: 'MH-12-POL-001 (Insp. Patil)', currentRole: 'police' },
               { device: 'ADMIN-001 (System Admin)', currentRole: 'admin' },
             ].map((d) => (
-              <div key={d.device} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+              <div key={d.device} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-md bg-secondary/50">
                 <div>
                   <p className="text-sm font-medium text-foreground">{d.device}</p>
                   <p className="text-[11px] text-muted-foreground capitalize">{d.currentRole.replace('_', ' ')}</p>
@@ -238,6 +239,10 @@ export default function AdminDashboard() {
           </div>
           {evidence.length > 0 && <EvidenceViewer items={evidence} />}
         </div>
+      )}
+
+      {activeTab === 'predictive' && (
+        <PredictiveInsightsWidget />
       )}
     </div>
   );
@@ -330,7 +335,7 @@ function OperatorManagement({ allVehicles }: { allVehicles: { id: string; callSi
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Operator Accounts</h3>
           <p className="text-xs text-muted-foreground">Add vehicle operators with login credentials. Each operator is linked to a specific vehicle.</p>
@@ -438,8 +443,8 @@ function OperatorManagement({ allVehicles }: { allVehicles: { id: string; callSi
       ) : operators.length === 0 ? (
         <EmptyState message="No operators" description="Add operators to assign vehicle login credentials." />
       ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border bg-card overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b bg-secondary/50">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Operator ID</th>
@@ -598,7 +603,7 @@ function DispatchesTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">All Dispatches</h3>
           <p className="text-xs text-muted-foreground">
@@ -635,9 +640,9 @@ function DispatchesTab({
           )}
           <div className="space-y-2">
             {undispatchedAccidents.map((a) => (
-              <div key={a.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
-                <div className="flex items-center gap-3">
-                  <Truck className="w-4 h-4 text-blue-400" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-md bg-secondary/50">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Truck className="w-4 h-4 text-blue-400 shrink-0" />
                   <div>
                     <p className="text-xs font-mono font-semibold text-foreground">{a.id.slice(0, 8)}…</p>
                     <p className="text-[11px] text-muted-foreground">
@@ -663,8 +668,8 @@ function DispatchesTab({
       {filtered.length === 0 ? (
         <EmptyState message="No dispatches" description={`No ${filter} dispatches found.`} />
       ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border bg-card overflow-x-auto">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="border-b bg-secondary/50">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Type</th>

@@ -649,6 +649,7 @@ exports.getDualRoutes = async (req, res) => {
     }
 
     let vehicleLat, vehicleLng, incidentLat, incidentLng, hospitalLat, hospitalLng, hospital;
+    let storedVehicleRoute = null, storedHospitalRoute = null;
 
     if (accDisp) {
       vehicleLat = accDisp.ambulance.latitude;
@@ -658,6 +659,23 @@ exports.getDualRoutes = async (req, res) => {
       hospital = accDisp.hospital;
       hospitalLat = hospital.latitude;
       hospitalLng = hospital.longitude;
+      // Prefer stored route geometry (matches what demo simulation follows)
+      if (accDisp.routeGeometry) {
+        storedVehicleRoute = {
+          provider: accDisp.routeProvider || "STORED",
+          distanceKm: accDisp.routeDistanceKm,
+          durationSec: accDisp.routeDurationSec,
+          geometry: accDisp.routeGeometry,
+        };
+      }
+      if (accDisp.hospitalRouteGeometry) {
+        storedHospitalRoute = {
+          provider: accDisp.hospitalRouteProvider || "STORED",
+          distanceKm: accDisp.hospitalRouteDistanceKm,
+          durationSec: accDisp.hospitalRouteDurationSec,
+          geometry: accDisp.hospitalRouteGeometry,
+        };
+      }
     } else if (fireDisp) {
       vehicleLat = fireDisp.fireBrigade.latitude;
       vehicleLng = fireDisp.fireBrigade.longitude;
@@ -668,6 +686,14 @@ exports.getDualRoutes = async (req, res) => {
       hospital = nearest;
       hospitalLat = nearest.latitude;
       hospitalLng = nearest.longitude;
+      if (fireDisp.routeGeometry) {
+        storedVehicleRoute = {
+          provider: fireDisp.routeProvider || "STORED",
+          distanceKm: fireDisp.routeDistanceKm,
+          durationSec: fireDisp.routeDurationSec,
+          geometry: fireDisp.routeGeometry,
+        };
+      }
     } else {
       vehicleLat = policeDisp.policeUnit.latitude;
       vehicleLng = policeDisp.policeUnit.longitude;
@@ -677,13 +703,23 @@ exports.getDualRoutes = async (req, res) => {
       hospital = nearest;
       hospitalLat = nearest.latitude;
       hospitalLng = nearest.longitude;
+      if (policeDisp.routeGeometry) {
+        storedVehicleRoute = {
+          provider: policeDisp.routeProvider || "STORED",
+          distanceKm: policeDisp.routeDistanceKm,
+          durationSec: policeDisp.routeDurationSec,
+          geometry: policeDisp.routeGeometry,
+        };
+      }
     }
 
-    // Compute both routes
-    const [vehicleToIncidentRoute, incidentToHospitalRoute] = await Promise.all([
-      getRoute({ fromLat: vehicleLat, fromLng: vehicleLng, toLat: incidentLat, toLng: incidentLng }),
-      getRoute({ fromLat: incidentLat, fromLng: incidentLng, toLat: hospitalLat, toLng: hospitalLng }),
-    ]);
+    // Use stored routes if available (consistent with simulation), otherwise compute fresh
+    const vehicleToIncidentRoute = storedVehicleRoute || await getRoute({
+      fromLat: vehicleLat, fromLng: vehicleLng, toLat: incidentLat, toLng: incidentLng,
+    });
+    const incidentToHospitalRoute = storedHospitalRoute || await getRoute({
+      fromLat: incidentLat, fromLng: incidentLng, toLat: hospitalLat, toLng: hospitalLng,
+    });
 
     res.json({
       dispatchId: dispatch.id,

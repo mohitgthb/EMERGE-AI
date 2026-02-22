@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Environment variables
 .env
@@ -46,6 +45,10 @@ out/
 # Testing
 coverage/
 .nyc_output/
+
+# Uploads (user-generated)
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Misc
 *.seed

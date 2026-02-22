@@ -21,6 +21,11 @@ import type {
   StatusHistoryEntry,
   DualRouteResponse,
   IncidentClusterInfo,
+  RiskZone,
+  StandbySuggestion,
+  PredictiveRiskData,
+  VehicleCrash,
+  VehicleCrashResponse,
 } from '@/types';
 
 // ─── Axios Instance ──────────────────────────────────────────────────────────
@@ -270,6 +275,40 @@ export const demoApi = {
     api.post('/demo/stop-all').then((r) => r.data),
   overrideStatus: (dispatchId: string, status: string) =>
     api.post(`/demo/override-status/${dispatchId}`, { status }).then((r) => r.data),
+};
+
+// ─── Predictive Readiness ────────────────────────────────────────────────────
+export const predictiveApi = {
+  riskData: () =>
+    api.get<PredictiveRiskData>('/predictive/risk-data').then((r) => r.data),
+  zones: () =>
+    api.get<RiskZone[]>('/predictive/zones').then((r) => r.data),
+  topZones: () =>
+    api.get<RiskZone[]>('/predictive/top-zones').then((r) => r.data),
+  suggestions: () =>
+    api.get<StandbySuggestion[]>('/predictive/suggestions').then((r) => r.data),
+  recalculate: () =>
+    api.post<PredictiveRiskData>('/predictive/recalculate').then((r) => r.data),
+  acceptSuggestion: (id: string) =>
+    api.post(`/predictive/suggestions/${id}/accept`).then((r) => r.data),
+  dismissSuggestion: (id: string) =>
+    api.post(`/predictive/suggestions/${id}/dismiss`).then((r) => r.data),
+};
+
+// ─── Vehicle Crash Alert ─────────────────────────────────────────────────────
+export const vehicleCrashApi = {
+  trigger: (data: {
+    vehicleId: string;
+    latitude: number;
+    longitude: number;
+    severity: string;
+    airbagDeployed: boolean;
+    timestamp: string;
+  }) => api.post<VehicleCrashResponse>('/vehicle/crash', data).then((r) => r.data),
+  cancel: (id: string) =>
+    api.post<{ message: string; crashId: string }>(`/vehicle/crash/${id}/cancel`).then((r) => r.data),
+  list: () => api.get<VehicleCrash[]>('/vehicle/crashes').then((r) => r.data),
+  get: (id: string) => api.get<VehicleCrash>(`/vehicle/crash/${id}`).then((r) => r.data),
 };
 
 export { api, API_URL };

@@ -125,14 +125,14 @@ export default function MapPage() {
       {/* Demo green corridor banner */}
       <DemoCorridorBanner />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-foreground">Live Operations Map</h2>
           <p className="text-xs text-muted-foreground font-mono mt-1">
             LIVE — {incidentMarkers.length} INCIDENTS — {vehicleMarkers.length} UNITS — {routeSegments.length} ROUTES
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <DemoModeToggle compact />
           <button
             onClick={() => setShowRoutes(!showRoutes)}
@@ -145,7 +145,7 @@ export default function MapPage() {
             <span className={`w-1.5 h-1.5 rounded-full ${showRoutes ? 'bg-primary' : 'bg-muted-foreground'}`} />
             Routes
           </button>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
             {[
               { label: 'Incident', color: 'bg-amber-500' },
               { label: 'Ambulance', color: 'bg-blue-500' },
@@ -169,12 +169,11 @@ export default function MapPage() {
         hospitals={hospitalMarkers}
         greenCorridorSignals={greenCorridorSignals}
         greenCorridorActive={greenCorridorActive}
-        height="calc(100vh - 210px)"
+        height="calc(100vh - 240px)"
       />
 
-      {/* Sidebar corridor indicator when active */}
       {greenCorridorActive && corridorVehicle && (
-        <div className="absolute right-6 bottom-8 z-[1001] w-72">
+        <div className="absolute right-3 sm:right-6 bottom-4 sm:bottom-8 z-[1001] w-64 sm:w-72">
           <GreenCorridorIndicator
             vehicleId={corridorVehicle.id}
             vehicleType={corridorVehicle.type}

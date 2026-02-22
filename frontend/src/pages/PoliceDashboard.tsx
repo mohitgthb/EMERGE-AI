@@ -34,7 +34,6 @@ export default function PoliceDashboard() {
     const socket = getSocket();
 
     const handleDispatchAssigned = (data: any) => {
-      console.log('[PoliceDashboard] New dispatch assigned:', data);
       setNewDispatchAlert(true);
       fetchAll();
       setTimeout(() => setNewDispatchAlert(false), 10000);
@@ -213,7 +212,7 @@ export default function PoliceDashboard() {
 
 function PoliceHeader({ operator, vehicleNo, count }: { operator: any; vehicleNo?: string; count: number }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Shield className="w-5 h-5 text-status-pending" /> Police Dashboard
@@ -222,9 +221,9 @@ function PoliceHeader({ operator, vehicleNo, count }: { operator: any; vehicleNo
           {count} ACTIVE ASSIGNMENTS
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {operator && (
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-card border">
+          <div className="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-lg bg-card border">
             <User className="w-4 h-4 text-purple-500" />
             <div className="text-right">
               <p className="text-sm font-semibold text-foreground">{operator.name}</p>

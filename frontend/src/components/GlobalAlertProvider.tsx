@@ -252,6 +252,19 @@ export function GlobalAlertProvider({ children }: { children: ReactNode }) {
       });
     });
 
+    socket.on(SOCKET_EVENTS.VEHICLE_CRASH_DETECTED, (data: any) => {
+      push({
+        type: 'VEHICLE_CRASH_DETECTED',
+        title: '🚗 Vehicle Crash Alert — Airbag Deployed',
+        message: `Vehicle ${data?.crash?.vehicleRegNo || 'Unknown'} reported crash. Severity: ${data?.crash?.severity || 'HIGH'}. Dispatch auto-initiated.`,
+        level: 'critical',
+        emergencyType: 'VEHICLE_CRASH',
+        incidentId: data?.crash?.accidentId,
+        autoDismiss: false,
+        soundType: 'urgent',
+      });
+    });
+
     return () => {
       socket.off(SOCKET_EVENTS.NEW_INCIDENT);
       socket.off(SOCKET_EVENTS.POLICE_ALERT);
@@ -260,6 +273,7 @@ export function GlobalAlertProvider({ children }: { children: ReactNode }) {
       socket.off(SOCKET_EVENTS.GREEN_CORRIDOR_ACTIVE);
       socket.off(SOCKET_EVENTS.FIRE_DETECTED);
       socket.off(SOCKET_EVENTS.SOS_TRIGGERED);
+      socket.off(SOCKET_EVENTS.VEHICLE_CRASH_DETECTED);
       listenersAttached.current = false;
     };
   }, [push]);

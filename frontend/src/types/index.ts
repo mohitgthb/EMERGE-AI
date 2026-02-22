@@ -315,7 +315,7 @@ export type NotificationLevel = 'info' | 'warning' | 'critical' | 'success';
 
 export interface SystemNotification {
   id: string;
-  type: 'NEW_INCIDENT' | 'DISPATCH_CREATED' | 'POLICE_ALERT' | 'VEHICLE_STATUS_UPDATED' | 'GREEN_CORRIDOR_ACTIVE' | 'SOS_TRIGGERED' | 'FIRE_DETECTED' | 'GENERAL';
+  type: 'NEW_INCIDENT' | 'DISPATCH_CREATED' | 'POLICE_ALERT' | 'VEHICLE_STATUS_UPDATED' | 'GREEN_CORRIDOR_ACTIVE' | 'SOS_TRIGGERED' | 'FIRE_DETECTED' | 'VEHICLE_CRASH_DETECTED' | 'GENERAL';
   title: string;
   message: string;
   level: NotificationLevel;
@@ -484,4 +484,75 @@ export interface IncidentUpdatedPayload {
   longitude: number;
   emergencyType: string;
   timestamp: string;
+}
+
+// ─── Predictive Emergency Readiness ──────────────────────────────────────────
+
+export interface RiskZone {
+  id: string;
+  gridKey: string;
+  centerLat: number;
+  centerLng: number;
+  riskScore: number;
+  incidentScore: number;
+  densityScore: number;
+  timeScore: number;
+  incidentCount: number;
+  avgDensity: number;
+  peakHour: number | null;
+  reasons: string[];
+  updatedAt: string;
+  createdAt: string;
+  suggestions?: StandbySuggestion[];
+}
+
+export interface StandbySuggestion {
+  id: string;
+  riskZoneId: string;
+  vehicleId: string;
+  vehicleType: string;
+  vehicleNo: string;
+  currentLat: number;
+  currentLng: number;
+  suggestedLat: number;
+  suggestedLng: number;
+  distanceKm: number;
+  responseTimeImprove: number;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  riskZone?: RiskZone;
+}
+
+export interface PredictiveRiskData {
+  zones: RiskZone[];
+  topZones: RiskZone[];
+  suggestions: StandbySuggestion[];
+  timestamp: string;
+}
+
+// ─── Connected Vehicle Crash Alert ──────────────────────────────────────────
+export interface VehicleCrash {
+  id: string;
+  vehicleRegNo: string;
+  latitude: number;
+  longitude: number;
+  severity: string;
+  airbagDeployed: boolean;
+  source: string;
+  status: string;
+  accidentId: string | null;
+  dispatchId: string | null;
+  cancelledAt: string | null;
+  idempotencyKey: string | null;
+  createdAt: string;
+}
+
+export interface VehicleCrashResponse {
+  message: string;
+  crash: VehicleCrash;
+  accident: Accident;
+  dispatch: Dispatch | null;
+  cancelWindowMs: number;
+  gpsAvailable: boolean;
 }

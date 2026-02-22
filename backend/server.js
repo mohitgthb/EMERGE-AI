@@ -47,6 +47,9 @@ const policeRoutes = require("./routes/police.routes");
 const emergencyQueueRoutes = require("./routes/emergencyQueue.routes");
 const authRoutes = require("./routes/auth.routes");
 const demoRoutes = require("./routes/demo.routes");
+const predictiveRoutes = require("./routes/predictive.routes");
+const vehicleCrashRoutes = require("./routes/vehicleCrash.routes");
+const { startPeriodicRecalc } = require("./services/predictiveReadinessService");
 
 const server = http.createServer(app);
 socket.init(server);
@@ -105,9 +108,13 @@ app.use("/api/fire-brigades", fireBrigadeRoutes);
 app.use("/api/police", policeRoutes);
 app.use("/api/emergency-queue", emergencyQueueRoutes);
 app.use("/api/demo", demoRoutes);
+app.use("/api/predictive", predictiveRoutes);
+app.use("/api/vehicle", vehicleCrashRoutes);
 app.use("/uploads", express.static("uploads"));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-    console.log(`server running on the port ${PORT}`)
+    console.log(`server running on the port ${PORT}`);
+    // Start predictive readiness periodic recalculation
+    startPeriodicRecalc();
 });

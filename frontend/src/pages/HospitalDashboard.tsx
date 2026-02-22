@@ -86,7 +86,7 @@ export default function HospitalDashboard() {
               )}
               onClick={() => setSelectedDispatchId(selectedDispatchId === d.id ? null : d.id)}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <StatusBadge variant={d.ambulance?.status?.toLowerCase() as any || 'pending'}>

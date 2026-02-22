@@ -1,6 +1,7 @@
 const prisma = require("../config/db");
 const { dispatchEmergency } = require("../services/emergencyDispatchService");
 const socket = require("../socket");
+const { onNewIncident } = require("../services/predictiveReadinessService");
 
 const HIGH_CONFIDENCE_THRESHOLD = 0.8;
 const LOW_CONFIDENCE_THRESHOLD = 0.5;
@@ -44,6 +45,7 @@ exports.handleDetection = async (req, res) => {
       });
 
       console.log(`🔥 Fire incident created in DB: ID ${fireIncident.id}`);
+      onNewIncident();
 
       if (confidence >= LOW_CONFIDENCE_THRESHOLD && confidence < HIGH_CONFIDENCE_THRESHOLD) {
         const queueEntry = await prisma.emergencyQueue.create({
@@ -106,6 +108,7 @@ exports.handleDetection = async (req, res) => {
       });
 
       console.log(`✅ Accident created in DB: ID ${accident.id}`);
+      onNewIncident();
 
       if (confidence >= LOW_CONFIDENCE_THRESHOLD && confidence < HIGH_CONFIDENCE_THRESHOLD) {
         const queueEntry = await prisma.emergencyQueue.create({

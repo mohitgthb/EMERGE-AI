@@ -268,3 +268,84 @@ model StatusHistory {
   @@index([vehicleId])
 }
 
+// ─── Predictive Emergency Readiness ─────────────────────────────────────────
+model RiskZone {
+  id              String   @id @default(uuid())
+  gridKey         String   @unique            // "lat_lng" grid cell identifier
+  centerLat       Float
+  centerLng       Float
+  riskScore       Float    @default(0)
+  incidentScore   Float    @default(0)
+  densityScore    Float    @default(0)
+  timeScore       Float    @default(0)
+  incidentCount   Int      @default(0)
+  avgDensity      Float    @default(0)
+  peakHour        Int?                        // 0-23 hour with highest incident rate
+  reasons         String[]                    // ["High past accidents", "High vehicle density", ...]
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  suggestions     StandbySuggestion[]
+
+  @@index([riskScore])
+}
+
+model DensitySummary {
+  id              String   @id @default(uuid())
+  cameraId        String
+  latitude        Float
+  longitude       Float
+  vehicleCount    Int      @default(0)
+  avgDensity      Float    @default(0)
+  windowStart     DateTime
+  windowEnd       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([cameraId])
+  @@index([windowStart, windowEnd])
+}
+
+model StandbySuggestion {
+  id                  String   @id @default(uuid())
+  riskZoneId          String
+  vehicleId           String
+  vehicleType         String                // AMBULANCE | FIRE_BRIGADE
+  vehicleNo           String
+  currentLat          Float
+  currentLng          Float
+  suggestedLat        Float
+  suggestedLng        Float
+  distanceKm          Float
+  responseTimeImprove Float                  // estimated seconds saved
+  status              String   @default("PENDING") // PENDING | ACCEPTED | DISMISSED | EXPIRED
+  createdAt           DateTime @default(now())
+  expiresAt           DateTime
+
+  riskZone            RiskZone @relation(fields: [riskZoneId], references: [id])
+
+  @@index([riskZoneId])
+  @@index([vehicleId])
+  @@index([status])
+}
+
+// ─── Connected Vehicle Crash Alert ──────────────────────────────────────────
+model VehicleCrash {
+  id              String   @id @default(uuid())
+  vehicleRegNo    String                        // e.g. "MH-12-CAR-009"
+  latitude        Float
+  longitude       Float
+  severity        String                        // LOW | MEDIUM | HIGH | CRITICAL
+  airbagDeployed  Boolean  @default(true)
+  source          String   @default("VEHICLE_SENSOR") // VEHICLE_SENSOR | MANUAL
+  status          String   @default("REPORTED")       // REPORTED | DISPATCHED | CANCELLED | DUPLICATE
+  accidentId      String?  @unique              // links to the Accident created from this crash
+  dispatchId      String?                       // the resulting dispatch ID
+  cancelledAt     DateTime?
+  idempotencyKey  String?  @unique              // vehicleRegNo + 5-min window key for dedup
+  createdAt       DateTime @default(now())
+
+  @@index([vehicleRegNo])
+  @@index([status])
+  @@index([createdAt])
+}
+

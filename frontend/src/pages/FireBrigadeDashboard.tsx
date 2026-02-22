@@ -33,7 +33,6 @@ export default function FireBrigadeDashboard() {
     const socket = getSocket();
 
     const handleDispatchAssigned = (data: any) => {
-      console.log('[FireBrigadeDashboard] New dispatch assigned:', data);
       setNewDispatchAlert(true);
       fetchAll();
       setTimeout(() => setNewDispatchAlert(false), 10000);
@@ -282,7 +281,7 @@ export default function FireBrigadeDashboard() {
 
 function FireBrigadeHeader({ operator, vehicleNo, count }: { operator: any; vehicleNo?: string; count: number }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Flame className="w-5 h-5 text-status-critical" /> Fire Brigade Dashboard
@@ -291,9 +290,9 @@ function FireBrigadeHeader({ operator, vehicleNo, count }: { operator: any; vehi
           {count} ACTIVE ASSIGNMENTS
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {operator && (
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-card border">
+          <div className="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-lg bg-card border">
             <User className="w-4 h-4 text-orange-500" />
             <div className="text-right">
               <p className="text-sm font-semibold text-foreground">{operator.name}</p>

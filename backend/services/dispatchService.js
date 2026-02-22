@@ -48,13 +48,21 @@ exports.autoDispatch = async (accident) => {
 
     const hospital = await selectBestHospital(accident);
 
-    // Generate route from ambulance to hospital
-    const route = await getRoute({
-      fromLat: nearest.latitude,
-      fromLng: nearest.longitude,
-      toLat: hospital.latitude,
-      toLng: hospital.longitude,
-    });
+    // Compute dual routes: vehicle→incident and incident→hospital
+    const [vehicleToIncidentRoute, incidentToHospitalRoute] = await Promise.all([
+      getRoute({
+        fromLat: nearest.latitude,
+        fromLng: nearest.longitude,
+        toLat: accident.latitude,
+        toLng: accident.longitude,
+      }),
+      getRoute({
+        fromLat: accident.latitude,
+        fromLng: accident.longitude,
+        toLat: hospital.latitude,
+        toLng: hospital.longitude,
+      }),
+    ]);
 
     try {
       // Atomic reservation/decrement inside a single transaction
@@ -84,10 +92,14 @@ exports.autoDispatch = async (accident) => {
             accidentId: accident.id,
             ambulanceId: nearest.id,
             hospitalId: hospital.id,
-            routeProvider: route.provider,
-            routeDistanceKm: route.distanceKm,
-            routeDurationSec: route.durationSec,
-            routeGeometry: route.geometry || null,
+            routeProvider: vehicleToIncidentRoute.provider,
+            routeDistanceKm: vehicleToIncidentRoute.distanceKm,
+            routeDurationSec: vehicleToIncidentRoute.durationSec,
+            routeGeometry: vehicleToIncidentRoute.geometry || null,
+            hospitalRouteProvider: incidentToHospitalRoute.provider,
+            hospitalRouteDistanceKm: incidentToHospitalRoute.distanceKm,
+            hospitalRouteDurationSec: incidentToHospitalRoute.durationSec,
+            hospitalRouteGeometry: incidentToHospitalRoute.geometry || null,
           },
         });
 

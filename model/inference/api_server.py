@@ -563,7 +563,8 @@ async def root():
             "health": "/health",
             "analyze": "/analyze (POST) - Single image analysis for SOS",
             "detect_camera": "/detect/camera (POST)",
-            "detect_video": "/detect/video (POST)"
+            "detect_video": "/detect/video (POST)",
+            "density_analyze": "/density/analyze (POST) - Vehicle density analysis"
         },
         "note": "Backend manages cameras and video sources. /analyze is used for SOS camera flow."
     }
@@ -914,6 +915,118 @@ async def analyze_image(file: UploadFile = File(...)):
 #         """.strip(),
 #         "docs": "http://localhost:8000/docs#/default/detect_video_detect_video_post"
 #     }
+
+
+# ─── Vehicle Density Analysis Endpoint ──────────────────────────────────────
+
+class DensityRequest(BaseModel):
+    camera_id: str
+    latitude: float
+    longitude: float
+    stream_url: Optional[str] = None
+    video_path: Optional[str] = None
+    stream_type: str = "RTSP"
+    duration_seconds: int = 30
+    backend_url: Optional[str] = None
+
+@app.post("/density/analyze")
+async def analyze_density(request: DensityRequest):
+    """
+    Count vehicles visible in a camera feed over a time window.
+    Returns vehicle count and average density, and optionally pushes
+    the summary to the Node.js backend predictive endpoint.
+    """
+    try:
+        print(f"\n📊 Density analysis for camera: {request.camera_id}")
+        
+        video_source = request.stream_url or request.video_path
+        if not video_source:
+            raise HTTPException(status_code=400, detail="No video source provided")
+
+        cap = cv2.VideoCapture(video_source)
+        if not cap.isOpened():
+            raise HTTPException(status_code=400, detail=f"Failed to open: {video_source}")
+
+        fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
+        max_frames = fps * request.duration_seconds
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total_frames > 0:
+            max_frames = min(max_frames, total_frames)
+
+        frame_counts = []
+        frame_idx = 0
+        sample_interval = max(1, fps // 2)  # ~2 samples per second
+
+        try:
+            while frame_idx < max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                frame_idx += 1
+
+                if frame_idx % sample_interval != 0:
+                    continue
+
+                results = STATE.yolo_model(frame, conf=CONFIG.yolo_confidence, verbose=False)
+                count = 0
+                if results and len(results) > 0 and results[0].boxes is not None:
+                    for box in results[0].boxes:
+                        cls = int(box.cls[0])
+                        if cls in [2, 3, 5, 7]:  # car, motorcycle, bus, truck
+                            count += 1
+                frame_counts.append(count)
+        finally:
+            cap.release()
+
+        vehicle_count = max(frame_counts) if frame_counts else 0
+        avg_density = round(sum(frame_counts) / len(frame_counts), 2) if frame_counts else 0.0
+
+        window_start = datetime.now().isoformat()
+        window_end = datetime.now().isoformat()
+
+        summary = {
+            "camera_id": request.camera_id,
+            "latitude": request.latitude,
+            "longitude": request.longitude,
+            "vehicle_count": vehicle_count,
+            "avg_density": avg_density,
+            "samples": len(frame_counts),
+            "window_start": window_start,
+            "window_end": window_end,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        # Push to backend
+        backend = request.backend_url or CONFIG.backend_url
+        try:
+            resp = requests.post(
+                f"{backend}/api/predictive/density",
+                json={
+                    "cameraId": request.camera_id,
+                    "latitude": request.latitude,
+                    "longitude": request.longitude,
+                    "vehicleCount": vehicle_count,
+                    "avgDensity": avg_density,
+                    "windowStart": window_start,
+                    "windowEnd": window_end,
+                },
+                timeout=5,
+            )
+            summary["backend_notified"] = resp.status_code in [200, 201]
+        except Exception as e:
+            print(f"   ⚠️ Backend density push failed: {e}")
+            summary["backend_notified"] = False
+
+        print(f"   Result: {vehicle_count} max vehicles, {avg_density} avg density")
+        return JSONResponse(content=summary)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"   ❌ Density analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/detect/camera")

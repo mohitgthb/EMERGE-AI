@@ -22,6 +22,7 @@ import FireBrigadeDashboard from "./pages/FireBrigadeDashboard";
 import PoliceDashboard from "./pages/PoliceDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DemoPage from "./pages/DemoPage";
+import VehicleCrashPage from "./pages/VehicleCrashPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -112,6 +113,7 @@ const App = () => (
               <Route path="/sos" element={<SOSPage />} />
               <Route path="/dispatch" element={<DispatchPage />} />
               <Route path="/demo" element={<DemoPage />} />
+              <Route path="/vehicle-crash" element={<VehicleCrashPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

@@ -1,7 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getSocket } from '@/services/socket';
-import { demoApi } from '@/services/api';
+import { demoApi, predictiveApi } from '@/services/api';
+
+export interface StandbyNotification {
+  suggestionId: string;
+  vehicleId: string;
+  vehicleType: string;
+  vehicleNo: string;
+  currentLat: number;
+  currentLng: number;
+  suggestedLat: number;
+  suggestedLng: number;
+  distanceKm: number;
+  responseTimeImprove: number;
+  expiresAt: string;
+  riskZone?: { gridKey: string; riskScore: number; centerLat: number; centerLng: number } | null;
+  timestamp: string;
+  /** local UI state */
+  accepting?: boolean;
+  dismissing?: boolean;
+  resolved?: 'accepted' | 'dismissed' | 'expired';
+}
 
 export interface SimulationInfo {
   dispatchId: string;
@@ -44,6 +64,8 @@ interface DemoState {
   corridorOverlayVisible: boolean;
   /** Corridor banner message */
   corridorMessage: string | null;
+  /** Real-time standby notifications from predictive service */
+  standbyNotifications: StandbyNotification[];
 
   // Actions
   toggleDemoMode: (enabled: boolean) => Promise<void>;
@@ -53,6 +75,9 @@ interface DemoState {
   stopSimulation: (dispatchId: string) => Promise<void>;
   stopAllSimulations: () => Promise<void>;
   overrideStatus: (dispatchId: string, status: string) => Promise<void>;
+  acceptStandby: (suggestionId: string) => Promise<void>;
+  dismissStandby: (suggestionId: string) => Promise<void>;
+  clearResolvedNotifications: () => void;
   initDemoSocket: () => void;
 }
 
@@ -69,6 +94,7 @@ export const useDemoStore = create<DemoState>()(
       corridorRouteCoords: [],
       corridorOverlayVisible: false,
       corridorMessage: null,
+      standbyNotifications: [],
 
       toggleDemoMode: async (enabled) => {
         set({ loading: true, error: null });
@@ -148,6 +174,59 @@ export const useDemoStore = create<DemoState>()(
         }
       },
 
+      acceptStandby: async (suggestionId) => {
+        // Mark as accepting
+        set((s) => ({
+          standbyNotifications: s.standbyNotifications.map((n) =>
+            n.suggestionId === suggestionId ? { ...n, accepting: true } : n
+          ),
+        }));
+        try {
+          await predictiveApi.acceptSuggestion(suggestionId);
+          set((s) => ({
+            standbyNotifications: s.standbyNotifications.map((n) =>
+              n.suggestionId === suggestionId ? { ...n, accepting: false, resolved: 'accepted' } : n
+            ),
+          }));
+        } catch (err: any) {
+          set((s) => ({
+            standbyNotifications: s.standbyNotifications.map((n) =>
+              n.suggestionId === suggestionId ? { ...n, accepting: false } : n
+            ),
+            error: err?.response?.data?.message || 'Failed to accept standby',
+          }));
+        }
+      },
+
+      dismissStandby: async (suggestionId) => {
+        set((s) => ({
+          standbyNotifications: s.standbyNotifications.map((n) =>
+            n.suggestionId === suggestionId ? { ...n, dismissing: true } : n
+          ),
+        }));
+        try {
+          await predictiveApi.dismissSuggestion(suggestionId);
+          set((s) => ({
+            standbyNotifications: s.standbyNotifications.map((n) =>
+              n.suggestionId === suggestionId ? { ...n, dismissing: false, resolved: 'dismissed' } : n
+            ),
+          }));
+        } catch (err: any) {
+          set((s) => ({
+            standbyNotifications: s.standbyNotifications.map((n) =>
+              n.suggestionId === suggestionId ? { ...n, dismissing: false } : n
+            ),
+            error: err?.response?.data?.message || 'Failed to dismiss standby',
+          }));
+        }
+      },
+
+      clearResolvedNotifications: () => {
+        set((s) => ({
+          standbyNotifications: s.standbyNotifications.filter((n) => !n.resolved),
+        }));
+      },
+
       initDemoSocket: () => {
         if (demoSocketInitialized) return;
         demoSocketInitialized = true;
@@ -213,6 +292,29 @@ export const useDemoStore = create<DemoState>()(
               simulations: s.simulations.filter((sim) => sim.dispatchId !== data.dispatchId),
             }));
           }
+        });
+
+        // Standby notification from predictive readiness
+        socket.on('STANDBY_NOTIFICATION', (data: StandbyNotification) => {
+          set((s) => {
+            // Avoid duplicates (same suggestionId)
+            const exists = s.standbyNotifications.some((n) => n.suggestionId === data.suggestionId);
+            if (exists) return s;
+            return {
+              standbyNotifications: [data, ...s.standbyNotifications].slice(0, 20), // keep max 20
+            };
+          });
+        });
+
+        // Standby accepted by another operator — mark as resolved
+        socket.on('STANDBY_ACCEPTED', (data: { suggestionId: string }) => {
+          set((s) => ({
+            standbyNotifications: s.standbyNotifications.map((n) =>
+              n.suggestionId === data.suggestionId && !n.resolved
+                ? { ...n, resolved: 'accepted' as const }
+                : n
+            ),
+          }));
         });
 
         // Periodically sync status

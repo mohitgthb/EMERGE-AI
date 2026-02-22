@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
-import { useDemoStore } from '@/stores/demoStore';
+import { useEffect, useState, useCallback } from 'react';
+import { useDemoStore, type StandbyNotification } from '@/stores/demoStore';
 import { useEmergencyStore } from '@/stores/emergencyStore';
 import { DemoStatusController, PhaseTimeline } from '@/components/DemoStatusController';
 import DispatchRouteLayer from '@/components/DispatchRouteLayer';
+import { StandbyNotificationBanner } from '@/components/StandbyNotificationBanner';
+import { predictiveApi } from '@/services/api';
 import { cn } from '@/lib/utils';
-import { Play, Square, Zap, Radio, MapPin, Activity } from 'lucide-react';
+import { Play, Square, Zap, Radio, MapPin, Activity, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function DemoPage() {
@@ -21,6 +23,7 @@ export default function DemoPage() {
     error,
     corridorOverlayVisible,
     corridorMessage,
+    standbyNotifications,
     fetchStatus,
   } = useDemoStore();
 
@@ -41,10 +44,50 @@ export default function DemoPage() {
 
   const anySimulating = simulations.length > 0;
   const corridorOn = corridorOverlayVisible || greenCorridorActive;
+  const [testingStandby, setTestingStandby] = useState(false);
 
   // First simulating dispatch drives the main map
   const featuredDispatch = allDispatches.find((d) => simulations.some((s) => s.dispatchId === d.id))
     ?? allDispatches[0];
+
+  /** Trigger a standby alert — tries real recalculation first, falls back to a demo notification */
+  const triggerTestStandby = useCallback(async () => {
+    setTestingStandby(true);
+    try {
+      // Try real recalculation (will generate real suggestions if incident data exists)
+      const result = await predictiveApi.recalculate();
+      if (result.suggestions && result.suggestions.length > 0) {
+        // Real suggestions emitted via socket — they'll appear automatically
+        setTestingStandby(false);
+        return;
+      }
+    } catch {
+      // Backend might not be ready — fall through to mock
+    }
+
+    // Fallback: inject a demo notification so user can see the UI
+    const demoAmbulance = ambulances[0];
+    const mockNotification: StandbyNotification = {
+      suggestionId: `demo-${Date.now()}`,
+      vehicleId: demoAmbulance?.id ?? 'demo-vehicle',
+      vehicleType: 'AMBULANCE',
+      vehicleNo: demoAmbulance?.vehicleNo ?? 'AMB-DEMO-01',
+      currentLat: demoAmbulance?.latitude ?? 18.5204,
+      currentLng: demoAmbulance?.longitude ?? 73.8567,
+      suggestedLat: (demoAmbulance?.latitude ?? 18.5204) + 0.012,
+      suggestedLng: (demoAmbulance?.longitude ?? 73.8567) + 0.008,
+      distanceKm: 1.7,
+      responseTimeImprove: 95,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      riskZone: { gridKey: '18.5200_73.8600', riskScore: 72, centerLat: 18.526, centerLng: 73.864 },
+      timestamp: new Date().toISOString(),
+    };
+
+    useDemoStore.setState((s) => ({
+      standbyNotifications: [mockNotification, ...s.standbyNotifications],
+    }));
+    setTestingStandby(false);
+  }, [ambulances]);
 
   return (
     <div className="space-y-6">
@@ -100,6 +143,21 @@ export default function DemoPage() {
               </Button>
             </>
           )}
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10 font-bold gap-1.5"
+            onClick={triggerTestStandby}
+            disabled={testingStandby}
+          >
+            {testingStandby ? (
+              <span className="w-3.5 h-3.5 border-2 border-amber-400/40 border-t-amber-400 rounded-full animate-spin" />
+            ) : (
+              <Bell className="w-3.5 h-3.5" />
+            )}
+            Test Standby Alert
+          </Button>
         </div>
       </div>
 
@@ -136,6 +194,9 @@ export default function DemoPage() {
           )}
         </div>
       )}
+
+      {/* ── Standby Notifications ── */}
+      <StandbyNotificationBanner />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* ── Dispatch cards ── */}
@@ -273,20 +334,20 @@ export default function DemoPage() {
             <DispatchRouteLayer
               dispatchId={featuredDispatch.id}
               vehicleType="AMBULANCE"
-              height="560px"
+              height="360px"
               showLabels
             />
           ) : (
             <div
               className="rounded-lg border border-dashed border-border flex items-center justify-center text-sm text-muted-foreground"
-              style={{ height: '560px' }}
+              style={{ height: '360px' }}
             >
               No dispatch selected — create a dispatch to see the map
             </div>
           )}
 
           {/* Traffic signal legend */}
-          <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-card border text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-3 sm:gap-4 px-3 py-2 rounded-lg bg-card border text-[11px] text-muted-foreground flex-wrap">
             <span className="font-semibold text-foreground">Map Legend:</span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-emerald-500" />

@@ -209,19 +209,19 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center glow-primary">
               <Radio className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-sm font-bold tracking-wide text-foreground">EMERGE-AI</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
             {(['admin', 'ambulance', 'hospital', 'fire_brigade', 'police'] as const).map((role) => (
               <button
                 key={role}
                 onClick={() => enterDashboard(role)}
-                className="px-3 py-1.5 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors capitalize"
+                className="px-2 sm:px-3 py-1.5 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors capitalize whitespace-nowrap"
               >
                 {role.replace('_', ' ')}
               </button>
@@ -232,7 +232,7 @@ export default function LandingPage() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 grid-ops opacity-20" />
-        <div className="max-w-7xl mx-auto px-6 py-24 text-center relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-24 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-status-critical/10 border border-status-critical/20 mb-8">
             <span className="w-2 h-2 rounded-full bg-status-critical animate-pulse-glow" />
             <span className="text-xs font-mono text-status-critical">AI-POWERED EMERGENCY RESPONSE</span>
@@ -289,7 +289,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { icon: AlertTriangle, title: 'AI Detection', desc: 'Automatic accident and fire detection via camera networks and sensors.' },
@@ -307,7 +307,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 pb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 sm:pb-20">
         <h2 className="text-lg font-bold text-foreground mb-4">Recent Emergency Activity</h2>
         <div className="rounded-xl border bg-card divide-y">
           {liveEvents.length === 0 ? (

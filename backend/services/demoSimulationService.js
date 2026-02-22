@@ -203,8 +203,53 @@ async function startSimulation(dispatchId, options = {}) {
     hospitalDurationSec = null;
   }
 
-  const routeCoords = extractCoords(routeGeometry);
-  const hospitalRouteCoords = extractCoords(hospitalRouteGeometry);
+  let routeCoords = extractCoords(routeGeometry);
+  let hospitalRouteCoords = extractCoords(hospitalRouteGeometry);
+
+  // Fallback: if ambulance dispatch has no stored routes, compute them on-the-fly
+  if (accDisp && (routeCoords.length === 0 || hospitalRouteCoords.length === 0)) {
+    const { getRoute } = require("./routingService");
+    const vehicleLat = accDisp.ambulance?.latitude;
+    const vehicleLng = accDisp.ambulance?.longitude;
+    const hospLat = accDisp.hospital?.latitude;
+    const hospLng = accDisp.hospital?.longitude;
+
+    if (routeCoords.length === 0 && vehicleLat && vehicleLng && incidentLat && incidentLng) {
+      console.log(`[DemoSim] Computing vehicle→incident route on-the-fly for dispatch ${dispatchId}`);
+      try {
+        const vRoute = await getRoute({ fromLat: vehicleLat, fromLng: vehicleLng, toLat: incidentLat, toLng: incidentLng });
+        if (vRoute.geometry) {
+          routeCoords = extractCoords(vRoute.geometry);
+          durationSec = vRoute.durationSec;
+          // Persist for future use
+          await prisma.dispatch.update({ where: { id: dispatchId }, data: {
+            routeGeometry: vRoute.geometry, routeDistanceKm: vRoute.distanceKm,
+            routeDurationSec: vRoute.durationSec, routeProvider: vRoute.provider,
+          }}).catch(() => {});
+        }
+      } catch (e) {
+        console.warn(`[DemoSim] On-the-fly vehicle→incident route failed:`, e.message);
+      }
+    }
+
+    if (hospitalRouteCoords.length === 0 && incidentLat && incidentLng && hospLat && hospLng) {
+      console.log(`[DemoSim] Computing incident→hospital route on-the-fly for dispatch ${dispatchId}`);
+      try {
+        const hRoute = await getRoute({ fromLat: incidentLat, fromLng: incidentLng, toLat: hospLat, toLng: hospLng });
+        if (hRoute.geometry) {
+          hospitalRouteCoords = extractCoords(hRoute.geometry);
+          hospitalDurationSec = hRoute.durationSec;
+          // Persist for future use
+          await prisma.dispatch.update({ where: { id: dispatchId }, data: {
+            hospitalRouteGeometry: hRoute.geometry, hospitalRouteDistanceKm: hRoute.distanceKm,
+            hospitalRouteDurationSec: hRoute.durationSec, hospitalRouteProvider: hRoute.provider,
+          }}).catch(() => {});
+        }
+      } catch (e) {
+        console.warn(`[DemoSim] On-the-fly incident→hospital route failed:`, e.message);
+      }
+    }
+  }
 
   if (routeCoords.length === 0) {
     throw new Error("No route geometry available for this dispatch — cannot simulate");

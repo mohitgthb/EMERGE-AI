@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const FormData = require("form-data");
 const prisma = require("../config/db");
-const { autoDispatch } = require("../services/dispatchService");
+const { dispatchEmergency } = require("../services/emergencyDispatchService");
 const socket = require("../socket");
 
 exports.processVideo = async (req, res) => {
@@ -39,7 +39,7 @@ exports.processVideo = async (req, res) => {
     });
 
     // 4️⃣ Auto dispatch
-    const dispatch = await autoDispatch(accident);
+    const dispatch = await dispatchEmergency({ accident, type: "ACCIDENT", emergencyType: "ACCIDENT" });
 
     // 5️⃣ Emit real-time update
     socket.getIO().emit("ACCIDENT_CONFIRMED", {

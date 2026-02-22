@@ -381,11 +381,36 @@ export const useEmergencyStore = create<EmergencyState>((set, get) => ({
       get().addLiveEvent({
         id: `ev-${Date.now()}`,
         type: 'dispatch',
-        message: `Emergency dispatch created for SOS incident`,
+        message: data.source === 'VEHICLE_SENSOR'
+          ? `Vehicle crash dispatch created for ${data.vehicleRegNo || 'vehicle'}`
+          : `Emergency dispatch created for SOS incident`,
         severity: 'HIGH',
         timestamp: new Date().toISOString(),
       });
-      get().fetchDispatches();
+      // Small delay to ensure backend transaction has committed
+      setTimeout(() => {
+        get().fetchDispatches();
+        get().fetchAccidents();
+        get().fetchAmbulances();
+        get().fetchAnalytics();
+      }, 500);
+    });
+
+    socket.on(SOCKET_EVENTS.VEHICLE_CRASH_DETECTED, (data: any) => {
+      get().addLiveEvent({
+        id: `ev-${Date.now()}`,
+        type: 'accident',
+        message: `🚗 Vehicle crash: ${data.vehicleRegNo || 'Unknown'} — Airbag deployed (${data.severity || 'HIGH'})`,
+        severity: data.severity || 'HIGH',
+        timestamp: new Date().toISOString(),
+      });
+      // Refresh everything — accident + dispatch are created together
+      setTimeout(() => {
+        get().fetchAccidents();
+        get().fetchDispatches();
+        get().fetchAmbulances();
+        get().fetchAnalytics();
+      }, 800);
     });
 
     socket.on(SOCKET_EVENTS.VEHICLE_EN_ROUTE, (data: any) => {
